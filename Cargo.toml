@@ -1,0 +1,8 @@
+[package]
+
+name = "rustls"
+version = "0.0.1"
+authors = [ "Brendon Crawford <brendon@aphex.io>" ]
+
+[dependencies]
+argparse = "0.2.1"
