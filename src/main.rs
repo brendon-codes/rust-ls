@@ -7,6 +7,7 @@ extern crate argparse;
 //use argparse::{ArgumentParser, StoreTrue, Store};
 
 
+#[derive(Debug)]
 struct Options {
     start: String,
     full: bool,
@@ -14,16 +15,66 @@ struct Options {
 }
 
 
-fn run(start: String, full: bool, filtres: String) -> bool {
-    //files = getfiles(start=start, full=full, filtres=filtres)
+#[derive(Debug)]
+struct Row {
+
+}
+
+
+fn get_dir_listing (start: String, filtres: String) -> Vec<String> {
+    if start != "./" {
+        start = os.path.relpath(start)
+    }
+    joinit = (
+        lambda f: (
+            os.path.join(
+                (
+                    start[2:] if
+                    (start[:2] == './') else
+                    start
+                ),
+                f
+            )
+        )
+    )
+    filterit = (
+        lambda f: (
+            filtres in f
+        )
+    )
+    if (not os.path.exists(start)) or (not os.path.isdir(start)):
+        return None
+    files = os.listdir(start)
+    fpaths = (
+        iter(files) if
+        (filtres is None) else
+        filter(filterit, files)
+    )
+    paths = map(joinit, fpaths)
+    return paths;
+}
+
+
+fn getfiles (start: String, full: bool, filtres: String) -> Vec<String> {
+    let paths: Vec<String> = get_dir_listing(start, filtres);
+    return paths;
+    //if paths is None:
+    //    return None
+    //processed = processrows(paths, full=full)
+    //sfiles = sorted(processed, key=sortfile, reverse=False)
+    //out = list(sfiles)
+    //return out;
+}
+
+
+fn run (start: String, full: bool, filtres: String) -> bool {
+    let files: Vec<Row> = getfiles(start, full, filtres);
     //if files is None:
     //    rendererror()
     //    return false;
     //rows = renderrows(files, full=full)
     //display(rows)
-    println!("{}", start);
-    println!("{}", full);
-    println!("{}", filtres);
+    println!("{:?}", files);
     return true;
 }
 
