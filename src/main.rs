@@ -4,7 +4,9 @@
 
 extern crate argparse;
 
-//use argparse::{ArgumentParser, StoreTrue, Store};
+use std::process;
+use std::fs;
+use std::path;
 
 
 #[derive(Debug)]
@@ -21,60 +23,76 @@ struct Row {
 }
 
 
-fn get_dir_listing (start: String, filtres: String) -> Vec<String> {
-    if start != "./" {
-        start = os.path.relpath(start)
+fn get_dir_listing (start: &str, filtres: &str) -> Vec<String> {
+    //let relstart: &str = (
+    //    if start != "./" {
+    //    }
+    //    else {
+    //        &start
+    //    }
+    //);
+    let can = fs::canonicalize("./");
+    match can {
+        Ok(v) => println!("{:?}", v),
+        Err(e) => println!("{:?}", e)
     }
-    joinit = (
-        lambda f: (
-            os.path.join(
-                (
-                    start[2:] if
-                    (start[:2] == './') else
-                    start
-                ),
-                f
-            )
-        )
-    )
-    filterit = (
-        lambda f: (
-            filtres in f
-        )
-    )
-    if (not os.path.exists(start)) or (not os.path.isdir(start)):
-        return None
-    files = os.listdir(start)
-    fpaths = (
-        iter(files) if
-        (filtres is None) else
-        filter(filterit, files)
-    )
-    paths = map(joinit, fpaths)
-    return paths;
+    //println!("{}", relstart);
+    return vec![];
+    // joinit = (
+    //     lambda f: (
+    //         os.path.join(
+    //             (
+    //                 start[2:] if
+    //                 (start[:2] == './') else
+    //                 start
+    //             ),
+    //             f
+    //         )
+    //     )
+    // )
+    // filterit = (
+    //     lambda f: (
+    //         filtres in f
+    //     )
+    // )
+    // if (not os.path.exists(start)) or (not os.path.isdir(start)):
+    //     return None
+    // files = os.listdir(start)
+    // fpaths = (
+    //     iter(files) if
+    //     (filtres is None) else
+    //     filter(filterit, files)
+    // )
+    // paths = map(joinit, fpaths)
+    // return paths;
 }
 
 
-fn getfiles (start: String, full: bool, filtres: String) -> Vec<String> {
-    let paths: Vec<String> = get_dir_listing(start, filtres);
+//fn processrows (paths: &Vec<String>, full: bool) -> Vec<Row> {
+//
+//}
+
+
+fn getfiles (start: &str, full: bool, filtres: &str) -> Vec<String> {
+    let paths: Vec<String> = get_dir_listing(&start, &filtres);
     return paths;
     //if paths is None:
     //    return None
-    //processed = processrows(paths, full=full)
+    //let processed: Vec<Row> = processrows(&paths, full);
     //sfiles = sorted(processed, key=sortfile, reverse=False)
     //out = list(sfiles)
     //return out;
 }
 
 
-fn run (start: String, full: bool, filtres: String) -> bool {
-    let files: Vec<Row> = getfiles(start, full, filtres);
+fn run (start: &str, full: bool, filtres: &str) -> bool {
+    let files: Vec<String> = getfiles(&start, full, &filtres);
     //if files is None:
     //    rendererror()
     //    return false;
     //rows = renderrows(files, full=full)
     //display(rows)
-    println!("{:?}", files);
+    println!("{:?}", &files);
     return true;
 }
 
@@ -117,15 +135,12 @@ fn getargs () -> Options {
 
 fn main () -> () {
     let options: Options = getargs();
-    let ret: bool = (
-        run(
-            options.start,
-            options.full,
-            options.filtres
-        )
-    );
+    let start: &str = options.start.as_str();
+    let full: bool = options.full;
+    let filtres: &str = options.filtres.as_str();
+    let ret: bool = run(&start, full, &filtres);
     if !ret {
-        std::process::exit(1);
+        process::exit(1);
     }
-    std::process::exit(0);
+    process::exit(0);
 }
