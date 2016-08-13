@@ -23,13 +23,14 @@ struct Options {
 
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct Row {
 
 }
 
 
-fn path_canonicalize (start: &str) -> Result<String, Error> {
-    let can: Result<PathBuf, Error> = fs_canonicalize(&start);
+fn path_canonicalize (start: String) -> Result<String, Error> {
+    let can: Result<PathBuf, Error> = fs_canonicalize(start);
     let foo: PathBuf = match can {
         Ok(v) => v,
         Err(e) => return Err(e)
@@ -44,10 +45,10 @@ fn path_canonicalize (start: &str) -> Result<String, Error> {
 }
 
 
-fn get_dir_listing (start: &str, filtres: &str) -> Result<Vec<String>, Error> {
-    let relstartstring: String = {
+fn get_dir_listing (start: String, filtres: String) -> Result<Vec<String>, Error> {
+    let relstart: String = {
         if start != "./" {
-            let canouter: Result<String, Error> = path_canonicalize(&start);
+            let canouter: Result<String, Error> = path_canonicalize(start);
             let caninner: String = match canouter {
                 Ok(v) => v,
                 Err(e) => return Err(e)
@@ -58,8 +59,8 @@ fn get_dir_listing (start: &str, filtres: &str) -> Result<Vec<String>, Error> {
             start.to_string()
         }
     };
-    let relstart: &str = relstartstring.as_str();
-    println!("{}", &relstart);
+    println!("{}", filtres);
+    println!("{}", relstart);
     return Ok(vec![]);
     // joinit = (
     //     lambda f: (
@@ -91,24 +92,25 @@ fn get_dir_listing (start: &str, filtres: &str) -> Result<Vec<String>, Error> {
 }
 
 
-fn getfiles (start: &str, full: bool, filtres: &str) -> Result<Vec<String>, Error> {
-    let respaths: Result<Vec<String>, Error> = get_dir_listing(&start, &filtres);
+fn getfiles (start: String, full: bool, filtres: String) -> Result<Vec<String>, Error> {
+    let respaths: Result<Vec<String>, Error> = get_dir_listing(start, filtres);
     let paths: Vec<String> = match respaths {
         Ok(v) => v,
         Err(e) => return Err(e)
     };
+    println!("{}", full);
     return Ok(paths);
     //if paths is None:
     //    return None
-    //let processed: Vec<Row> = processrows(&paths, full);
+    //let processed: Vec<Row> = processrows(paths, full);
     //sfiles = sorted(processed, key=sortfile, reverse=False)
     //out = list(sfiles)
     //return out;
 }
 
 
-fn run (start: &str, full: bool, filtres: &str) -> Result<bool, Error> {
-    let resfiles: Result<Vec<String>, Error> = getfiles(&start, full, &filtres);
+fn run (start: String, full: bool, filtres: String) -> Result<bool, Error> {
+    let resfiles: Result<Vec<String>, Error> = getfiles(start, full, filtres);
     let files: Vec<String> = match resfiles {
         Ok(v) => v,
         Err(e) => return Err(e)
@@ -118,7 +120,7 @@ fn run (start: &str, full: bool, filtres: &str) -> Result<bool, Error> {
     //    return false;
     //rows = renderrows(files, full=full)
     //display(rows)
-    println!("{:?}", &files);
+    println!("{:?}", files);
     return Ok(true);
 }
 
@@ -163,14 +165,14 @@ fn main () -> () {
     let resoptions: Result<Options, Error> = getargs();
     let options: Options = match resoptions {
         Ok(v) => v,
-        Err(e) => exit(1)
+        Err(_) => exit(1)
     };
-    let start: &str = options.start.as_str();
+    let start: String = options.start;
     let full: bool = options.full;
-    let filtres: &str = options.filtres.as_str();
-    let ret: Result<bool, Error> = run(&start, full, &filtres);
+    let filtres: String = options.filtres;
+    let ret: Result<bool, Error> = run(start, full, filtres);
     match ret {
-        Ok(v) => exit(0),
-        Err(e) => exit(1)
+        Ok(_) => exit(0),
+        Err(_) => exit(1)
     }
 }
