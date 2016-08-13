@@ -4,9 +4,14 @@
 
 extern crate argparse;
 
-use std::process;
-use std::fs;
-use std::path;
+use std::process::{exit};
+use std::path::{Path, PathBuf};
+use std::io::{Error, ErrorKind};
+use std::result::{Result};
+use std::option::{Option};
+use std::fs::{canonicalize as fs_canonicalize};
+
+use argparse::{ArgumentParser, StoreTrue as ArgStoreTrue, Store as ArgStore};
 
 
 #[derive(Debug)]
@@ -23,21 +28,39 @@ struct Row {
 }
 
 
-fn get_dir_listing (start: &str, filtres: &str) -> Vec<String> {
-    //let relstart: &str = (
-    //    if start != "./" {
-    //    }
-    //    else {
-    //        &start
-    //    }
-    //);
-    let can = fs::canonicalize("./");
-    match can {
-        Ok(v) => println!("{:?}", v),
-        Err(e) => println!("{:?}", e)
-    }
-    //println!("{}", relstart);
-    return vec![];
+fn path_canonicalize (start: &str) -> Result<String, Error> {
+    let can: Result<PathBuf, Error> = fs_canonicalize(&start);
+    let foo: PathBuf = match can {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let bar: &Path = foo.as_path();
+    let faz: Option<&str> = bar.to_str();
+    let baz: String = match faz {
+        Some(gaf) => gaf.to_string(),
+        None => return Err(Error::new(ErrorKind::Other, "Woops!"))
+    };
+    return Ok(baz);
+}
+
+
+fn get_dir_listing (start: &str, filtres: &str) -> Result<Vec<String>, Error> {
+    let relstartstring: String = {
+        if start != "./" {
+            let canouter: Result<String, Error> = path_canonicalize(&start);
+            let caninner: String = match canouter {
+                Ok(v) => v,
+                Err(e) => return Err(e)
+            };
+            caninner
+        }
+        else {
+            start.to_string()
+        }
+    };
+    let relstart: &str = relstartstring.as_str();
+    println!("{}", &relstart);
+    return Ok(vec![]);
     // joinit = (
     //     lambda f: (
     //         os.path.join(
@@ -68,14 +91,13 @@ fn get_dir_listing (start: &str, filtres: &str) -> Vec<String> {
 }
 
 
-//fn processrows (paths: &Vec<String>, full: bool) -> Vec<Row> {
-//
-//}
-
-
-fn getfiles (start: &str, full: bool, filtres: &str) -> Vec<String> {
-    let paths: Vec<String> = get_dir_listing(&start, &filtres);
-    return paths;
+fn getfiles (start: &str, full: bool, filtres: &str) -> Result<Vec<String>, Error> {
+    let respaths: Result<Vec<String>, Error> = get_dir_listing(&start, &filtres);
+    let paths: Vec<String> = match respaths {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    return Ok(paths);
     //if paths is None:
     //    return None
     //let processed: Vec<Row> = processrows(&paths, full);
@@ -85,62 +107,70 @@ fn getfiles (start: &str, full: bool, filtres: &str) -> Vec<String> {
 }
 
 
-fn run (start: &str, full: bool, filtres: &str) -> bool {
-    let files: Vec<String> = getfiles(&start, full, &filtres);
+fn run (start: &str, full: bool, filtres: &str) -> Result<bool, Error> {
+    let resfiles: Result<Vec<String>, Error> = getfiles(&start, full, &filtres);
+    let files: Vec<String> = match resfiles {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
     //if files is None:
     //    rendererror()
     //    return false;
     //rows = renderrows(files, full=full)
     //display(rows)
     println!("{:?}", &files);
-    return true;
+    return Ok(true);
 }
 
 
-fn getargs () -> Options {
+fn getargs () -> Result<Options, Error> {
     let mut options: Options = Options {
         full: false,
         start: "./".to_string(),
         filtres: "".to_string()
     };
     {
-        let mut aparse: argparse::ArgumentParser = argparse::ArgumentParser::new();
+        let mut aparse: ArgumentParser = ArgumentParser::new();
         aparse.set_description("Replacement for ls");
         aparse
             .refer(&mut options.start)
             .add_option(
                 &["-s", "--start"],
-                argparse::Store,
+                ArgStore,
                 "Starting Path"
             );
         aparse
             .refer(&mut options.full)
             .add_option(
                 &["-f", "--full"],
-                argparse::StoreTrue,
+                ArgStoreTrue,
                 "Full Output"
             );
         aparse
             .refer(&mut options.filtres)
             .add_option(
                 &["-g", "--filter"],
-                argparse::Store,
+                ArgStore,
                 "Filter Results"
             );
         aparse.parse_args_or_exit();
     }
-    return options;
+    return Ok(options);
 }
 
 
 fn main () -> () {
-    let options: Options = getargs();
+    let resoptions: Result<Options, Error> = getargs();
+    let options: Options = match resoptions {
+        Ok(v) => v,
+        Err(e) => exit(1)
+    };
     let start: &str = options.start.as_str();
     let full: bool = options.full;
     let filtres: &str = options.filtres.as_str();
-    let ret: bool = run(&start, full, &filtres);
-    if !ret {
-        process::exit(1);
+    let ret: Result<bool, Error> = run(&start, full, &filtres);
+    match ret {
+        Ok(v) => exit(0),
+        Err(e) => exit(1)
     }
-    process::exit(0);
 }
