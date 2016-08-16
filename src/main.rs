@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::io::{Error, ErrorKind};
 use std::result::{Result};
 use std::option::{Option};
-use std::fs::{canonicalize as fs_canonicalize};
+use std::fs;
 
 use argparse::{ArgumentParser, StoreTrue as ArgStoreTrue, Store as ArgStore};
 
@@ -30,7 +30,7 @@ struct Row {
 
 
 fn path_canonicalize (start: String) -> Result<String, Error> {
-    let can: Result<PathBuf, Error> = fs_canonicalize(start);
+    let can: Result<PathBuf, Error> = fs::canonicalize(start);
     let foo: PathBuf = match can {
         Ok(v) => v,
         Err(e) => return Err(e)
@@ -59,9 +59,6 @@ fn get_dir_listing (start: String, filtres: String) -> Result<Vec<String>, Error
             start.to_string()
         }
     };
-    println!("{}", filtres);
-    println!("{}", relstart);
-    return Ok(vec![]);
     // joinit = (
     //     lambda f: (
     //         os.path.join(
@@ -81,7 +78,13 @@ fn get_dir_listing (start: String, filtres: String) -> Result<Vec<String>, Error
     // )
     // if (not os.path.exists(start)) or (not os.path.isdir(start)):
     //     return None
-    // files = os.listdir(start)
+    let files = match fs::read_dir(relstart) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    for file in files {
+        println!("File: {}", file.unwrap().path().display());
+    }
     // fpaths = (
     //     iter(files) if
     //     (filtres is None) else
@@ -89,6 +92,8 @@ fn get_dir_listing (start: String, filtres: String) -> Result<Vec<String>, Error
     // )
     // paths = map(joinit, fpaths)
     // return paths;
+    println!("{}", filtres);
+    return Ok(vec![]);
 }
 
 
