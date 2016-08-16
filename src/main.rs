@@ -9,6 +9,10 @@ use std::path::{Path, PathBuf};
 use std::io::{Error, ErrorKind};
 use std::result::{Result};
 use std::option::{Option};
+use std::vec::{Vec, IntoIter};
+use std::fs::{ReadDir, DirEntry};
+use std::iter::{Filter};
+//use std::ops::{Fn, FnMut};
 use std::fs;
 
 use argparse::{ArgumentParser, StoreTrue as ArgStoreTrue, Store as ArgStore};
@@ -78,13 +82,28 @@ fn get_dir_listing (start: String, filtres: String) -> Result<Vec<String>, Error
     // )
     // if (not os.path.exists(start)) or (not os.path.isdir(start)):
     //     return None
-    let files = match fs::read_dir(relstart) {
+    let dirres: Result<ReadDir, Error> = fs::read_dir(relstart);
+    let rfiles: ReadDir = match dirres {
         Ok(v) => v,
         Err(e) => return Err(e)
     };
-    for file in files {
-        println!("File: {}", file.unwrap().path().display());
-    }
+    let filesmapper = |fpath: Result<DirEntry, Error>| -> String {
+        let pbpath: PathBuf = fpath.unwrap().path();
+        let ppath: &Path = pbpath.as_path();
+        let spath: Option<&str> = ppath.to_str();
+        let upath: &str = spath.unwrap();
+        let path: String = upath.to_string();
+        path
+    };
+    let filesfilt = |f: &String| -> bool {
+        filtres == "".to_string() ||
+            f.contains(&filtres)
+    };
+    let vpaths: Vec<String> = rfiles.map(filesmapper).collect();
+    let ipaths: IntoIter<String> = vpaths.into_iter();
+    let fpaths: Filter<IntoIter<String>, _> = ipaths.filter(filesfilt);
+    let paths: Vec<String> = fpaths.collect();
+
     // fpaths = (
     //     iter(files) if
     //     (filtres is None) else
@@ -93,6 +112,7 @@ fn get_dir_listing (start: String, filtres: String) -> Result<Vec<String>, Error
     // paths = map(joinit, fpaths)
     // return paths;
     println!("{}", filtres);
+    println!("{:?}", paths);
     return Ok(vec![]);
 }
 
