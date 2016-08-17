@@ -10,7 +10,7 @@ use std::io::{Error, ErrorKind};
 use std::result::{Result};
 use std::option::{Option};
 use std::vec::{Vec, IntoIter};
-use std::fs::{ReadDir, DirEntry};
+use std::fs::{ReadDir, DirEntry, Metadata};
 use std::iter::{Filter};
 //use std::ops::{Fn, FnMut};
 use std::fs;
@@ -33,8 +33,8 @@ struct Row {
 }
 
 
-fn path_canonicalize (start: String) -> Result<String, Error> {
-    let can: Result<PathBuf, Error> = fs::canonicalize(start);
+fn path_canonicalize (start: &String) -> Result<String, Error> {
+    let can: Result<PathBuf, Error> = fs::canonicalize(&start);
     let foo: PathBuf = match can {
         Ok(v) => v,
         Err(e) => return Err(e)
@@ -49,10 +49,15 @@ fn path_canonicalize (start: String) -> Result<String, Error> {
 }
 
 
-fn get_dir_listing (start: String, filtres: String) -> Result<Vec<String>, Error> {
+fn build_error (msg: &str) -> Result<Vec<String>, Error> {
+    return Err(Error::new(ErrorKind::Other, msg));
+}
+
+
+fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Error> {
     let relstart: String = {
         if start != "./" {
-            let canouter: Result<String, Error> = path_canonicalize(start);
+            let canouter: Result<String, Error> = path_canonicalize(&start);
             let caninner: String = match canouter {
                 Ok(v) => v,
                 Err(e) => return Err(e)
@@ -63,6 +68,14 @@ fn get_dir_listing (start: String, filtres: String) -> Result<Vec<String>, Error
             start.to_string()
         }
     };
+    let metares: Result<Metadata, Error> = fs::metadata(&relstart);
+    let meta: Metadata = match metares {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    if !meta.is_dir() {
+        return build_error("Not a directory!");
+    }
     // joinit = (
     //     lambda f: (
     //         os.path.join(
@@ -75,14 +88,7 @@ fn get_dir_listing (start: String, filtres: String) -> Result<Vec<String>, Error
     //         )
     //     )
     // )
-    // filterit = (
-    //     lambda f: (
-    //         filtres in f
-    //     )
-    // )
-    // if (not os.path.exists(start)) or (not os.path.isdir(start)):
-    //     return None
-    let dirres: Result<ReadDir, Error> = fs::read_dir(relstart);
+    let dirres: Result<ReadDir, Error> = fs::read_dir(&relstart);
     let rfiles: ReadDir = match dirres {
         Ok(v) => v,
         Err(e) => return Err(e)
@@ -92,16 +98,18 @@ fn get_dir_listing (start: String, filtres: String) -> Result<Vec<String>, Error
         let ppath: &Path = pbpath.as_path();
         let spath: Option<&str> = ppath.to_str();
         let upath: &str = spath.unwrap();
-        let path: String = upath.to_string();
+        // Strip off leading "./"
+        let tpath: &str = &upath[2..];
+        let path: String = tpath.to_string();
         path
     };
     let filesfilt = |f: &String| -> bool {
-        filtres == "".to_string() ||
-            f.contains(&filtres)
+        filtres == &"".to_string() ||
+            f.contains(filtres)
     };
-    let vpaths: Vec<String> = rfiles.map(filesmapper).collect();
+    let vpaths: Vec<String> = rfiles.map(&filesmapper).collect();
     let ipaths: IntoIter<String> = vpaths.into_iter();
-    let fpaths: Filter<IntoIter<String>, _> = ipaths.filter(filesfilt);
+    let fpaths: Filter<IntoIter<String>, _> = ipaths.filter(&filesfilt);
     let paths: Vec<String> = fpaths.collect();
 
     // fpaths = (
@@ -111,14 +119,14 @@ fn get_dir_listing (start: String, filtres: String) -> Result<Vec<String>, Error
     // )
     // paths = map(joinit, fpaths)
     // return paths;
-    println!("{}", filtres);
-    println!("{:?}", paths);
+    println!("{}", &filtres);
+    println!("{:?}", &paths);
     return Ok(vec![]);
 }
 
 
-fn getfiles (start: String, full: bool, filtres: String) -> Result<Vec<String>, Error> {
-    let respaths: Result<Vec<String>, Error> = get_dir_listing(start, filtres);
+fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<String>, Error> {
+    let respaths: Result<Vec<String>, Error> = get_dir_listing(&start, &filtres);
     let paths: Vec<String> = match respaths {
         Ok(v) => v,
         Err(e) => return Err(e)
@@ -134,8 +142,8 @@ fn getfiles (start: String, full: bool, filtres: String) -> Result<Vec<String>, 
 }
 
 
-fn run (start: String, full: bool, filtres: String) -> Result<bool, Error> {
-    let resfiles: Result<Vec<String>, Error> = getfiles(start, full, filtres);
+fn run (start: &String, full: bool, filtres: &String) -> Result<bool, Error> {
+    let resfiles: Result<Vec<String>, Error> = getfiles(&start, full, &filtres);
     let files: Vec<String> = match resfiles {
         Ok(v) => v,
         Err(e) => return Err(e)
@@ -195,7 +203,7 @@ fn main () -> () {
     let start: String = options.start;
     let full: bool = options.full;
     let filtres: String = options.filtres;
-    let ret: Result<bool, Error> = run(start, full, filtres);
+    let ret: Result<bool, Error> = run(&start, full, &filtres);
     match ret {
         Ok(_) => exit(0),
         Err(_) => exit(1)
