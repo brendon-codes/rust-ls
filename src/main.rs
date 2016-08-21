@@ -13,12 +13,49 @@ use std::vec::{Vec, IntoIter};
 use std::fs::{ReadDir, DirEntry, Metadata};
 use std::iter::{Filter};
 //use std::ops::{Fn, FnMut};
+//use std::collections::{HashMap};
 use std::fs;
 
 use argparse::{ArgumentParser, StoreTrue as ArgStoreTrue, Store as ArgStore};
 
 
 #[derive(Debug)]
+#[allow(dead_code)]
+struct FileInfo {
+    fname: bool,
+    stat_res: bool,
+    ftype: bool,
+    contenttype: bool,
+    timeepoch: bool
+}
+
+
+#[derive(Debug)]
+#[allow(dead_code)]
+struct RowDef<'a> {
+    name: &'a str,
+    onlyfull: bool,
+    align: &'a str,
+    func: (fn (FileInfo) -> String)
+}
+
+
+#[derive(Debug)]
+#[allow(dead_code)]
+struct AllRowDefs<'a> {
+    acls: RowDef<'a>,
+    owner: RowDef<'a>,
+    filetype: RowDef<'a>,
+    size: RowDef<'a>,
+    timeiso: RowDef<'a>,
+    srcname: RowDef<'a>,
+    targetname: RowDef<'a>,
+    preview: RowDef<'a>
+}
+
+
+#[derive(Debug)]
+#[allow(dead_code)]
 struct Options {
     start: String,
     full: bool,
@@ -76,18 +113,6 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
     if !meta.is_dir() {
         return build_error("Not a directory!");
     }
-    // joinit = (
-    //     lambda f: (
-    //         os.path.join(
-    //             (
-    //                 start[2:] if
-    //                 (start[:2] == './') else
-    //                 start
-    //             ),
-    //             f
-    //         )
-    //     )
-    // )
     let dirres: Result<ReadDir, Error> = fs::read_dir(&relstart);
     let rfiles: ReadDir = match dirres {
         Ok(v) => v,
@@ -111,31 +136,41 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
     let ipaths: IntoIter<String> = vpaths.into_iter();
     let fpaths: Filter<IntoIter<String>, _> = ipaths.filter(&filesfilt);
     let paths: Vec<String> = fpaths.collect();
+    return Ok(paths);
+}
 
-    // fpaths = (
-    //     iter(files) if
-    //     (filtres is None) else
-    //     filter(filterit, files)
-    // )
-    // paths = map(joinit, fpaths)
-    // return paths;
-    println!("{}", &filtres);
-    println!("{:?}", &paths);
+
+//fn getrowdefs () {
+//
+//}
+
+
+fn processrows (files: Vec<String>, full: bool) -> Result<Vec<Row>, Error> {
+    //fdefs = getrowdefs()
+    //func = lambda fname: buildrow(fname, fdefs, full=full)
+    //out = map(func, files)
+    //return out
+    println!("{:?}", &files);
+    println!("{}", full);
     return Ok(vec![]);
 }
 
 
-fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<String>, Error> {
+fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<Row>, Error> {
     let respaths: Result<Vec<String>, Error> = get_dir_listing(&start, &filtres);
     let paths: Vec<String> = match respaths {
         Ok(v) => v,
         Err(e) => return Err(e)
     };
-    println!("{}", full);
-    return Ok(paths);
     //if paths is None:
     //    return None
-    //let processed: Vec<Row> = processrows(paths, full);
+    let resproc: Result<Vec<Row>, Error> = processrows(paths, full);
+    let processed: Vec<Row> = match resproc {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    println!("{}", full);
+    return Ok(processed);
     //sfiles = sorted(processed, key=sortfile, reverse=False)
     //out = list(sfiles)
     //return out;
@@ -143,8 +178,8 @@ fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<String>
 
 
 fn run (start: &String, full: bool, filtres: &String) -> Result<bool, Error> {
-    let resfiles: Result<Vec<String>, Error> = getfiles(&start, full, &filtres);
-    let files: Vec<String> = match resfiles {
+    let resfiles: Result<Vec<Row>, Error> = getfiles(&start, full, &filtres);
+    let files: Vec<Row> = match resfiles {
         Ok(v) => v,
         Err(e) => return Err(e)
     };
