@@ -18,6 +18,9 @@ use std::fs;
 
 use argparse::{ArgumentParser, StoreTrue as ArgStoreTrue, Store as ArgStore};
 
+const ROWDEF_ALIGN_LEFT: u8 = 0;
+const ROWDEF_ALIGN_RIGHT: u8 = 1;
+
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -35,7 +38,7 @@ struct FileInfo {
 struct RowDef<'a> {
     name: &'a str,
     onlyfull: bool,
-    align: &'a str,
+    align: u8,
     func: (fn (FileInfo) -> String)
 }
 
@@ -43,14 +46,14 @@ struct RowDef<'a> {
 #[derive(Debug)]
 #[allow(dead_code)]
 struct AllRowDefs<'a> {
-    acls: RowDef<'a>,
-    owner: RowDef<'a>,
-    filetype: RowDef<'a>,
-    size: RowDef<'a>,
-    timeiso: RowDef<'a>,
-    srcname: RowDef<'a>,
-    targetname: RowDef<'a>,
-    preview: RowDef<'a>
+    acls: RowDef<'a>
+    // owner: RowDef<'a>,
+    // filetype: RowDef<'a>,
+    // size: RowDef<'a>,
+    // timeiso: RowDef<'a>,
+    // srcname: RowDef<'a>,
+    // targetname: RowDef<'a>,
+    // preview: RowDef<'a>
 }
 
 
@@ -140,16 +143,57 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
 }
 
 
-//fn getrowdefs () {
-//
-//}
+fn col_acls (rowinfo: FileInfo) -> String {
+    // fname = rowinfo['fname']
+    // stat_res = rowinfo['stat_res']
+    // all_acls_mode = get_acls_all(fname, stat_res)
+    // me_acls_mode = get_acls_me(fname, stat_res)
+    // ret = ' '.join([all_acls_mode, me_acls_mode])
+    // return ret
+    println!("{:?}", rowinfo);
+    return "".to_string();
+}
+
+fn getrowdefs () -> Result<AllRowDefs<'a>, Error> {
+    let rowdefs: AllRowDefs = AllRowDefs {
+        acls: RowDef {
+            name: "acls",
+            func: col_acls,
+            onlyfull: true,
+            align: ROWDEF_ALIGN_LEFT
+        }
+        // owner: RowDef {
+        //
+        // },
+        // filetype: RowDef {
+        //
+        // },
+        // size: RowDef {
+        //
+        // },
+        // timeiso: RowDef {
+        //
+        // },
+        // srcname: RowDef {
+        //
+        // },
+        // targetname: RowDef {
+        //
+        // },
+        // preview: RowDef {
+        //
+        // }
+    };
+    return Ok(rowdefs);
+}
 
 
 fn processrows (files: Vec<String>, full: bool) -> Result<Vec<Row>, Error> {
-    //fdefs = getrowdefs()
+    let fdefs_res: Result<AllRowDefs, Error> = getrowdefs();
     //func = lambda fname: buildrow(fname, fdefs, full=full)
     //out = map(func, files)
     //return out
+    println!("{:?}", fdefs_res);
     println!("{:?}", &files);
     println!("{}", full);
     return Ok(vec![]);
