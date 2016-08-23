@@ -35,8 +35,8 @@ struct FileInfo {
 
 #[derive(Debug)]
 #[allow(dead_code)]
-struct RowDef<'a> {
-    name: &'a str,
+struct RowDef {
+    name: &'static str,
     onlyfull: bool,
     align: u8,
     func: (fn (FileInfo) -> String)
@@ -45,15 +45,15 @@ struct RowDef<'a> {
 
 #[derive(Debug)]
 #[allow(dead_code)]
-struct AllRowDefs<'a> {
-    acls: RowDef<'a>
-    // owner: RowDef<'a>,
-    // filetype: RowDef<'a>,
-    // size: RowDef<'a>,
-    // timeiso: RowDef<'a>,
-    // srcname: RowDef<'a>,
-    // targetname: RowDef<'a>,
-    // preview: RowDef<'a>
+struct AllRowDefs {
+    acls: RowDef,
+    owner: RowDef
+    // filetype: RowDef,
+    // size: RowDef,
+    // timeiso: RowDef,
+    // srcname: RowDef,
+    // targetname: RowDef,
+    // preview: RowDef
 }
 
 
@@ -144,27 +144,31 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
 
 
 fn col_acls (rowinfo: FileInfo) -> String {
-    // fname = rowinfo['fname']
-    // stat_res = rowinfo['stat_res']
-    // all_acls_mode = get_acls_all(fname, stat_res)
-    // me_acls_mode = get_acls_me(fname, stat_res)
-    // ret = ' '.join([all_acls_mode, me_acls_mode])
-    // return ret
     println!("{:?}", rowinfo);
     return "".to_string();
 }
 
-fn getrowdefs () -> Result<AllRowDefs<'a>, Error> {
+
+fn col_owner (rowinfo: FileInfo) -> String {
+    println!("{:?}", rowinfo);
+    return "".to_string();
+}
+
+
+fn getrowdefs () -> Result<AllRowDefs, Error> {
     let rowdefs: AllRowDefs = AllRowDefs {
         acls: RowDef {
             name: "acls",
             func: col_acls,
             onlyfull: true,
             align: ROWDEF_ALIGN_LEFT
+        },
+        owner: RowDef {
+            name: "owner",
+            func: col_owner,
+            onlyfull: true,
+            align: ROWDEF_ALIGN_LEFT
         }
-        // owner: RowDef {
-        //
-        // },
         // filetype: RowDef {
         //
         // },
@@ -184,6 +188,7 @@ fn getrowdefs () -> Result<AllRowDefs<'a>, Error> {
         //
         // }
     };
+    println!("{}", ROWDEF_ALIGN_RIGHT);
     return Ok(rowdefs);
 }
 
