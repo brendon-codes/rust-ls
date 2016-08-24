@@ -21,14 +21,25 @@ use argparse::{ArgumentParser, StoreTrue as ArgStoreTrue, Store as ArgStore};
 const ROWDEF_ALIGN_LEFT: u8 = 0;
 const ROWDEF_ALIGN_RIGHT: u8 = 1;
 
+const FTYPE_DIR: u8 = 0;
+const FTYPE_FILE: u8 = 1;
+
+const CONTYPE_DIR: u8 = 0;
+const CONTYPE_UNREADABLE: u8 = 1;
+const CONTYPE_EMPTY: u8 = 2;
+const CONTYPE_BINEXEC: u8 = 3;
+const CONTYPE_BINOTHER: u8 = 4;
+const CONTYPE_TEXT: u8 = 5;
+const CONTYPE_OTHER: u8 = 6;
+
 
 #[derive(Debug)]
 #[allow(dead_code)]
 struct FileInfo {
-    fname: bool,
-    stat_res: bool,
-    ftype: bool,
-    contenttype: bool,
+    fname: String,
+    stat_res: Metadata,
+    ftype: u8,
+    contenttype: u8,
     timeepoch: bool
 }
 
@@ -144,6 +155,11 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
 
 
 fn col_acls (rowinfo: FileInfo) -> String {
+    let fname: String = &rowinfo.fname;
+    let stat_res: Metadata = &rowinfo.stat_res;
+    all_acls_mode = get_acls_all(fname, stat_res)
+    me_acls_mode = get_acls_me(fname, stat_res)
+    ret = ' '.join([all_acls_mode, me_acls_mode])
     println!("{:?}", rowinfo);
     return "".to_string();
 }
