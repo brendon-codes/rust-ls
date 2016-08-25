@@ -1,5 +1,8 @@
 
+#![allow(unused_variables)]
 #![allow(unused_parens)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
 
 
 extern crate argparse;
@@ -10,10 +13,9 @@ use std::io::{Error, ErrorKind};
 use std::result::{Result};
 use std::option::{Option};
 use std::vec::{Vec, IntoIter};
-use std::fs::{ReadDir, DirEntry, Metadata};
+use std::fs::{ReadDir, DirEntry, Metadata, Permissions};
 use std::iter::{Filter};
-//use std::ops::{Fn, FnMut};
-//use std::collections::{HashMap};
+use std::os::unix::fs::{PermissionsExt, MetadataExt};
 use std::fs;
 
 use argparse::{ArgumentParser, StoreTrue as ArgStoreTrue, Store as ArgStore};
@@ -33,8 +35,7 @@ const CONTYPE_TEXT: u8 = 5;
 const CONTYPE_OTHER: u8 = 6;
 
 
-#[derive(Debug)]
-#[allow(dead_code)]
+//#[derive(Debug)]
 struct FileInfo {
     fname: String,
     stat_res: Metadata,
@@ -43,18 +44,16 @@ struct FileInfo {
 }
 
 
-#[derive(Debug)]
-#[allow(dead_code)]
+//#[derive(Debug)]
 struct RowDef {
     name: &'static str,
     onlyfull: bool,
     align: u8,
-    func: (fn (FileInfo) -> String)
+    func: (fn (&FileInfo) -> Result<String, Error>)
 }
 
 
-#[derive(Debug)]
-#[allow(dead_code)]
+//#[derive(Debug)]
 struct AllRowDefs {
     acls: RowDef
     // owner: RowDef,
@@ -68,7 +67,6 @@ struct AllRowDefs {
 
 
 #[derive(Debug)]
-#[allow(dead_code)]
 struct Options {
     start: String,
     full: bool,
@@ -77,7 +75,6 @@ struct Options {
 
 
 #[derive(Debug)]
-#[allow(dead_code)]
 struct Row {
 
 }
@@ -118,16 +115,14 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
             start.to_string()
         }
     };
-    let metares: Result<Metadata, Error> = fs::metadata(&relstart);
-    let meta: Metadata = match metares {
+    let meta: Metadata = match fs::metadata(&relstart) {
         Ok(v) => v,
         Err(e) => return Err(e)
     };
     if !meta.is_dir() {
         return build_error("Not a directory!");
     }
-    let dirres: Result<ReadDir, Error> = fs::read_dir(&relstart);
-    let rfiles: ReadDir = match dirres {
+    let rfiles: ReadDir = match fs::read_dir(&relstart) {
         Ok(v) => v,
         Err(e) => return Err(e)
     };
@@ -153,42 +148,44 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
 }
 
 
-fn get_acls_me (fname: &String, stat_res: &Metadata) -> Result<String, Error> {
-    let t_no = 0;
-    let me_can_read = os.access(fname, os.R_OK);
-    let me_can_write = os.access(fname, os.W_OK);
-    let me_can_exec = os.access(fname, os.X_OK);
-    let me_pdefs = [
-        (me_can_read, 4),
-        (me_can_write, 2),
-        (me_can_exec, 1)
-    ];
-    let me_vals = map(lambda x: x[1] if x[0] else t_no, me_pdefs);
-    let me_acls_num = reduce(lambda x, y: x | y, me_vals, 0);
-    let me_acls_mode = str(me_acls_num);
-    return me_acls_mode;
-}
+// fn get_acls_me (fname: &String, stat_res: &Metadata) -> Result<String, Error> {
+//     let t_no = 0;
+//     let me_can_read = os.access(fname, os.R_OK);
+//     let me_can_write = os.access(fname, os.W_OK);
+//     let me_can_exec = os.access(fname, os.X_OK);
+//     let me_pdefs = [
+//         (me_can_read, 4),
+//         (me_can_write, 2),
+//         (me_can_exec, 1)
+//     ];
+//     let me_vals = map(lambda x: x[1] if x[0] else t_no, me_pdefs);
+//     let me_acls_num = reduce(lambda x, y: x | y, me_vals, 0);
+//     let me_acls_mode = str(me_acls_num);
+//     return me_acls_mode;
+// }
 
 
 fn get_acls_all (fname: &String, stat_res: &Metadata) -> Result<String, Error> {
-    let all_acls_mode = str(oct(stat.S_IMODE(stat_res.st_mode)))[-3:];
-    return all_acls_mode;
+    //let all_acls_mode = str(oct(stat.S_IMODE(stat_res.st_mode)))[-3:];
+    let all_acls_mode: String = stat_res.mode().to_string();
+    return Ok(all_acls_mode);
 }
 
 
-fn col_acls (rowinfo: FileInfo) -> Result<String, Error> {
-    let fname: String = &rowinfo.fname;
-    let stat_res: Metadata = &rowinfo.stat_res;
-    let all_acls_mode: String = match get_acls_all(&fname, &stat_res) {
-        Ok(v) => v,
-        Err(e) => return Err(e)
+fn col_acls (rowinfo: &FileInfo) -> Result<String, Error> {
+    let all_acls_mode: String = {
+        match get_acls_all(&rowinfo.fname, &rowinfo.stat_res) {
+            Ok(v) => v,
+            Err(e) => return Err(e)
+        }
     };
-    let me_acls_mode: String =  match get_acls_me(&fname, &stat_res) {
-        Ok(v) => v,
-        Err(e) => return Err(e)
-    }
-    let ret = ' '.join([all_acls_mode, me_acls_mode])
-    return ret;
+    //let me_acls_mode: String =  match get_acls_me(&fname, &stat_res) {
+    //    Ok(v) => v,
+    //    Err(e) => return Err(e)
+    //};
+    //let ret = ' '.join([all_acls_mode, me_acls_mode])
+    let ret: String = all_acls_mode;
+    return Ok(ret);
 }
 
 
@@ -241,7 +238,7 @@ fn processrows (files: Vec<String>, full: bool) -> Result<Vec<Row>, Error> {
     //func = lambda fname: buildrow(fname, fdefs, full=full)
     //out = map(func, files)
     //return out
-    println!("{:?}", fdefs_res);
+    //println!("{:?}", fdefs_res);
     println!("{:?}", &files);
     println!("{}", full);
     return Ok(vec![]);
