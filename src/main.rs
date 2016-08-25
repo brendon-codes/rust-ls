@@ -39,8 +39,7 @@ struct FileInfo {
     fname: String,
     stat_res: Metadata,
     ftype: u8,
-    contenttype: u8,
-    timeepoch: bool
+    contenttype: u8
 }
 
 
@@ -57,8 +56,8 @@ struct RowDef {
 #[derive(Debug)]
 #[allow(dead_code)]
 struct AllRowDefs {
-    acls: RowDef,
-    owner: RowDef
+    acls: RowDef
+    // owner: RowDef,
     // filetype: RowDef,
     // size: RowDef,
     // timeiso: RowDef,
@@ -154,21 +153,49 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
 }
 
 
-fn col_acls (rowinfo: FileInfo) -> String {
+fn get_acls_me (fname: &String, stat_res: &Metadata) -> Result<String, Error> {
+    let t_no = 0;
+    let me_can_read = os.access(fname, os.R_OK);
+    let me_can_write = os.access(fname, os.W_OK);
+    let me_can_exec = os.access(fname, os.X_OK);
+    let me_pdefs = [
+        (me_can_read, 4),
+        (me_can_write, 2),
+        (me_can_exec, 1)
+    ];
+    let me_vals = map(lambda x: x[1] if x[0] else t_no, me_pdefs);
+    let me_acls_num = reduce(lambda x, y: x | y, me_vals, 0);
+    let me_acls_mode = str(me_acls_num);
+    return me_acls_mode;
+}
+
+
+fn get_acls_all (fname: &String, stat_res: &Metadata) -> Result<String, Error> {
+    let all_acls_mode = str(oct(stat.S_IMODE(stat_res.st_mode)))[-3:];
+    return all_acls_mode;
+}
+
+
+fn col_acls (rowinfo: FileInfo) -> Result<String, Error> {
     let fname: String = &rowinfo.fname;
     let stat_res: Metadata = &rowinfo.stat_res;
-    all_acls_mode = get_acls_all(fname, stat_res)
-    me_acls_mode = get_acls_me(fname, stat_res)
-    ret = ' '.join([all_acls_mode, me_acls_mode])
-    println!("{:?}", rowinfo);
-    return "".to_string();
+    let all_acls_mode: String = match get_acls_all(&fname, &stat_res) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let me_acls_mode: String =  match get_acls_me(&fname, &stat_res) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    }
+    let ret = ' '.join([all_acls_mode, me_acls_mode])
+    return ret;
 }
 
 
-fn col_owner (rowinfo: FileInfo) -> String {
-    println!("{:?}", rowinfo);
-    return "".to_string();
-}
+//fn col_owner (rowinfo: FileInfo) -> String {
+//    println!("{:?}", rowinfo);
+//    return "".to_string();
+//}
 
 
 fn getrowdefs () -> Result<AllRowDefs, Error> {
@@ -178,13 +205,13 @@ fn getrowdefs () -> Result<AllRowDefs, Error> {
             func: col_acls,
             onlyfull: true,
             align: ROWDEF_ALIGN_LEFT
-        },
-        owner: RowDef {
-            name: "owner",
-            func: col_owner,
-            onlyfull: true,
-            align: ROWDEF_ALIGN_LEFT
         }
+        //owner: RowDef {
+        //    name: "owner",
+        //    func: col_owner,
+        //    onlyfull: true,
+        //    align: ROWDEF_ALIGN_LEFT
+        //}
         // filetype: RowDef {
         //
         // },
