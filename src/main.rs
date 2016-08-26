@@ -35,8 +35,7 @@ const CONTYPE_TEXT: u8 = 5;
 const CONTYPE_OTHER: u8 = 6;
 
 
-//#[derive(Debug)]
-struct FileInfo {
+struct RowInfo {
     fname: String,
     stat_res: Metadata,
     ftype: u8,
@@ -44,16 +43,33 @@ struct FileInfo {
 }
 
 
-//#[derive(Debug)]
+#[derive(Debug)]
+struct RowRendered {
+    acls: String
+    // owner: String,
+    // filetype: String,
+    // size: String,
+    // timeiso: String,
+    // srcname: String,
+    // targetname: String,
+    // preview: String
+}
+
+
+struct Row {
+    info: RowInfo,
+    render: RowRendered
+}
+
+
 struct RowDef {
     name: &'static str,
     onlyfull: bool,
     align: u8,
-    func: (fn (&FileInfo) -> Result<String, Error>)
+    func: (fn (&RowInfo) -> Result<String, Error>)
 }
 
 
-//#[derive(Debug)]
 struct AllRowDefs {
     acls: RowDef
     // owner: RowDef,
@@ -71,12 +87,6 @@ struct Options {
     start: String,
     full: bool,
     filtres: String
-}
-
-
-#[derive(Debug)]
-struct Row {
-
 }
 
 
@@ -104,12 +114,10 @@ fn build_error (msg: &str) -> Result<Vec<String>, Error> {
 fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Error> {
     let relstart: String = {
         if start != "./" {
-            let canouter: Result<String, Error> = path_canonicalize(&start);
-            let caninner: String = match canouter {
+            match path_canonicalize(&start) {
                 Ok(v) => v,
                 Err(e) => return Err(e)
-            };
-            caninner
+            }
         }
         else {
             start.to_string()
@@ -148,23 +156,6 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
 }
 
 
-// fn get_acls_me (fname: &String, stat_res: &Metadata) -> Result<String, Error> {
-//     let t_no = 0;
-//     let me_can_read = os.access(fname, os.R_OK);
-//     let me_can_write = os.access(fname, os.W_OK);
-//     let me_can_exec = os.access(fname, os.X_OK);
-//     let me_pdefs = [
-//         (me_can_read, 4),
-//         (me_can_write, 2),
-//         (me_can_exec, 1)
-//     ];
-//     let me_vals = map(lambda x: x[1] if x[0] else t_no, me_pdefs);
-//     let me_acls_num = reduce(lambda x, y: x | y, me_vals, 0);
-//     let me_acls_mode = str(me_acls_num);
-//     return me_acls_mode;
-// }
-
-
 fn get_acls_all (fname: &String, stat_res: &Metadata) -> Result<String, Error> {
     //let all_acls_mode = str(oct(stat.S_IMODE(stat_res.st_mode)))[-3:];
     let all_acls_mode: String = stat_res.mode().to_string();
@@ -172,7 +163,7 @@ fn get_acls_all (fname: &String, stat_res: &Metadata) -> Result<String, Error> {
 }
 
 
-fn col_acls (rowinfo: &FileInfo) -> Result<String, Error> {
+fn col_acls (rowinfo: &RowInfo) -> Result<String, Error> {
     let all_acls_mode: String = {
         match get_acls_all(&rowinfo.fname, &rowinfo.stat_res) {
             Ok(v) => v,
@@ -189,11 +180,6 @@ fn col_acls (rowinfo: &FileInfo) -> Result<String, Error> {
 }
 
 
-//fn col_owner (rowinfo: FileInfo) -> String {
-//    println!("{:?}", rowinfo);
-//    return "".to_string();
-//}
-
 
 fn getrowdefs () -> Result<AllRowDefs, Error> {
     let rowdefs: AllRowDefs = AllRowDefs {
@@ -203,45 +189,90 @@ fn getrowdefs () -> Result<AllRowDefs, Error> {
             onlyfull: true,
             align: ROWDEF_ALIGN_LEFT
         }
-        //owner: RowDef {
-        //    name: "owner",
-        //    func: col_owner,
-        //    onlyfull: true,
-        //    align: ROWDEF_ALIGN_LEFT
-        //}
-        // filetype: RowDef {
-        //
-        // },
-        // size: RowDef {
-        //
-        // },
-        // timeiso: RowDef {
-        //
-        // },
-        // srcname: RowDef {
-        //
-        // },
-        // targetname: RowDef {
-        //
-        // },
-        // preview: RowDef {
-        //
-        // }
     };
     println!("{}", ROWDEF_ALIGN_RIGHT);
     return Ok(rowdefs);
 }
 
 
+fn getrowinfo (fname: String) -> Result<RowInfo, Error> {
+    let stat_res: Metadata = match fs::metadata(&fname) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let ftype: u8 = FTYPE_DIR;
+    let contenttype: u8 = CONTYPE_DIR;
+    let ret: RowInfo = RowInfo {
+        fname: fname,
+        stat_res: stat_res,
+        ftype: ftype,
+        contenttype: contenttype
+    };
+    return Ok(ret);
+}
+
+
+fn get_fileinfo_rendered (fdefs: &AllRowDefs, rowinfo: &RowInfo) -> Result<RowRendered, Error> {
+    // func = (
+    //     lambda rec: (
+    //         rec['name'],
+    //         (
+    //             rec['func'](rowinfo) if
+    //             shouldbuild(rec, full=full) else
+    //             ' '
+    //         )
+    //     )
+    // )
+    // return dict(map(func, fdefs.values()))
+    let acls: String = match (fdefs.acls.func)(&rowinfo) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let ret: RowRendered = RowRendered {
+        acls: acls
+    };
+    return Ok(ret);
+}
+
+
+fn buildrow (fname: String, fdefs: &AllRowDefs, full: bool) -> Result<Row, Error> {
+    let rowinfo: RowInfo = match getrowinfo(fname) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let rowrender: RowRendered = match get_fileinfo_rendered(&fdefs, &rowinfo) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let row: Row = Row {
+        info: rowinfo,
+        render: rowrender
+    };
+    return Ok(row);
+}
+
+
 fn processrows (files: Vec<String>, full: bool) -> Result<Vec<Row>, Error> {
-    let fdefs_res: Result<AllRowDefs, Error> = getrowdefs();
-    //func = lambda fname: buildrow(fname, fdefs, full=full)
-    //out = map(func, files)
-    //return out
-    //println!("{:?}", fdefs_res);
-    println!("{:?}", &files);
-    println!("{}", full);
-    return Ok(vec![]);
+    let fdefs: AllRowDefs = match getrowdefs() {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let func = |fname: String| -> Result<Row, Error> {
+        match buildrow(fname, &fdefs, full) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e)
+        }
+    };
+    let filterfunc = |rowres: Result<Row, Error>| -> bool {
+        match rowres {
+            Ok(_) => true,
+            Err(_) => false
+        }
+    };
+    let files_iter: IntoIter<String> = files.into_iter();
+    let files_filtered: IntoIter<Result<Row, Error>> = files_iter.map(&func).filter(&filterfunc);
+    let out: Vec<Row> = files_filtered.collect();
+    return Ok(out);
 }
 
 
@@ -267,8 +298,7 @@ fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<Row>, E
 
 
 fn run (start: &String, full: bool, filtres: &String) -> Result<bool, Error> {
-    let resfiles: Result<Vec<Row>, Error> = getfiles(&start, full, &filtres);
-    let files: Vec<Row> = match resfiles {
+    let files: Vec<Row> = match getfiles(&start, full, &filtres) {
         Ok(v) => v,
         Err(e) => return Err(e)
     };
