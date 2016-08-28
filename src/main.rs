@@ -14,7 +14,7 @@ use std::result::{Result};
 use std::option::{Option};
 use std::vec::{Vec, IntoIter};
 use std::fs::{ReadDir, DirEntry, Metadata, Permissions};
-use std::iter::{Filter};
+use std::iter::{Filter, Map};
 use std::os::unix::fs::{PermissionsExt, MetadataExt};
 use std::fs;
 
@@ -106,11 +106,6 @@ fn path_canonicalize (start: &String) -> Result<String, Error> {
 }
 
 
-fn build_error (msg: &str) -> Result<Vec<String>, Error> {
-    return Err(Error::new(ErrorKind::Other, msg));
-}
-
-
 fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Error> {
     let relstart: String = {
         if start != "./" {
@@ -128,7 +123,7 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
         Err(e) => return Err(e)
     };
     if !meta.is_dir() {
-        return build_error("Not a directory!");
+        return Err(Error::new(ErrorKind::Other, "Not a directory!"));
     }
     let rfiles: ReadDir = match fs::read_dir(&relstart) {
         Ok(v) => v,
@@ -257,21 +252,15 @@ fn processrows (files: Vec<String>, full: bool) -> Result<Vec<Row>, Error> {
         Ok(v) => v,
         Err(e) => return Err(e)
     };
-    let func = |fname: String| -> Result<Row, Error> {
-        match buildrow(fname, &fdefs, full) {
-            Ok(v) => Ok(v),
-            Err(e) => Err(e)
-        }
-    };
-    let filterfunc = |rowres: Result<Row, Error>| -> bool {
-        match rowres {
-            Ok(_) => true,
-            Err(_) => false
-        }
+    //
+    // There should probably be a better way to handle this?
+    //
+    let func_build = |fname: String| -> Row {
+        buildrow(fname, &fdefs, full).unwrap()
     };
     let files_iter: IntoIter<String> = files.into_iter();
-    let files_filtered: IntoIter<Result<Row, Error>> = files_iter.map(&func).filter(&filterfunc);
-    let out: Vec<Row> = files_filtered.collect();
+    let files_build: Map<IntoIter<String>, _> = files_iter.map(&func_build);
+    let out: Vec<Row> = files_build.collect();
     return Ok(out);
 }
 
@@ -297,18 +286,33 @@ fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<Row>, E
 }
 
 
-fn run (start: &String, full: bool, filtres: &String) -> Result<bool, Error> {
-    let files: Vec<Row> = match getfiles(&start, full, &filtres) {
-        Ok(v) => v,
-        Err(e) => return Err(e)
-    };
-    //if files is None:
-    //    rendererror()
-    //    return false;
-    //rows = renderrows(files, full=full)
-    //display(rows)
-    println!("{:?}", files);
-    return Ok(true);
+fn renderrows (files: Vec<Row>, full: bool) -> Result<String, Error> {
+    //colpaddings = getcolpaddings(files);
+    //fdefs = getrowdefs();
+    //renderer = lambda r: rendercols(r, colpaddings, fdefs, full=full);
+    //out = '\n'.join(map(renderer, files));
+    //return out;
+    return Ok("Testing".to_string());
+}
+
+
+fn display (outdata: String) -> Result<&'static str, Error> {
+    println!("{}", &outdata);
+    return Ok("");
+}
+
+
+fn run (start: &String, full: bool, filtres: &String) -> Result<&'static str, Error> {
+    let filesres: Result<Vec<Row>, Error> = getfiles(&start, full, &filtres);
+    if let Err(e) = filesres {
+        println!("Error!!!");
+        //rendererror();
+        return Err(Error::new(ErrorKind::Other, ""));
+    }
+    let files: Vec<Row> = filesres.unwrap();
+    let outdata: String = renderrows(files, full).unwrap();
+    let dispres: Result<&'static str, Error> = display(outdata);
+    return Ok("");
 }
 
 
@@ -357,7 +361,7 @@ fn main () -> () {
     let start: String = options.start;
     let full: bool = options.full;
     let filtres: String = options.filtres;
-    let ret: Result<bool, Error> = run(&start, full, &filtres);
+    let ret: Result<&str, Error> = run(&start, full, &filtres);
     match ret {
         Ok(_) => exit(0),
         Err(_) => exit(1)
