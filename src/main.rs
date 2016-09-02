@@ -16,6 +16,7 @@ use std::vec::{Vec, IntoIter};
 use std::fs::{ReadDir, DirEntry, Metadata, Permissions};
 use std::iter::{Filter, Map};
 use std::os::unix::fs::{PermissionsExt, MetadataExt};
+use std::collections::{HashMap};
 use std::fs;
 
 use argparse::{ArgumentParser, StoreTrue as ArgStoreTrue, Store as ArgStore};
@@ -87,6 +88,20 @@ struct Options {
     start: String,
     full: bool,
     filtres: String
+}
+
+
+impl IntoIterator for RowRendered {
+    type Item = i8;
+    type IntoIter = Iterator<Item=Self::Item>;
+
+    pub fn into_iter(self) -> Self::IntoIter {
+        [
+            &self.r,
+            &self.b,
+            &self.g
+        ].into_iter()
+    }
 }
 
 
@@ -286,8 +301,21 @@ fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<Row>, E
 }
 
 
+fn getcolpaddings (rows: Vec<Row>) {
+    let mut longest: HashMap<&str, isize> = HashMap::new();
+    for row in rows:
+        for colname, colval in row.render.items():
+            if colname not in longest:
+                longest[colname] = 0
+            collen = len(colval)
+            if collen > longest[colname]:
+                longest[colname] = collen
+    return longest;
+}
+
+
 fn renderrows (files: Vec<Row>, full: bool) -> Result<String, Error> {
-    //colpaddings = getcolpaddings(files);
+    let colpaddings = getcolpaddings(files);
     //fdefs = getrowdefs();
     //renderer = lambda r: rendercols(r, colpaddings, fdefs, full=full);
     //out = '\n'.join(map(renderer, files));
