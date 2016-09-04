@@ -92,14 +92,9 @@ struct Options {
 
 
 impl IntoIterator for RowRendered {
-    type Item = i8;
-    type IntoIter = Iterator<Item=Self::Item>;
-
-    pub fn into_iter(self) -> Self::IntoIter {
+    pub fn into_iter(self) -> IntoIter {
         [
-            &self.r,
-            &self.b,
-            &self.g
+            ("acls", &self.acls)
         ].into_iter()
     }
 }
@@ -301,21 +296,29 @@ fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<Row>, E
 }
 
 
-fn getcolpaddings (rows: Vec<Row>) {
-    let mut longest: HashMap<&str, isize> = HashMap::new();
+fn getcolpaddings (rows: Vec<Row>) -> HashMap<&str, u8> {
+    let mut collen: u8 = 0;
+    let mut longest: HashMap<&str, u8> = HashMap::new();
     for row in rows:
-        for colname, colval in row.render.items():
-            if colname not in longest:
-                longest[colname] = 0
-            collen = len(colval)
-            if collen > longest[colname]:
-                longest[colname] = collen
+        for col in row.render.into_iter() {
+            let colname: &str = col.0;
+            let colval: &str = col.1;
+            if !longest.contains_key(&colname) {
+                longest.insert(&colname, 0);
+            }
+            collen = colval.len();
+            if let Some(x) = longest.get_mut(&colname) {
+                if collen > x {
+                    *x = collen;
+                }
+            }
+        }
     return longest;
 }
 
 
 fn renderrows (files: Vec<Row>, full: bool) -> Result<String, Error> {
-    let colpaddings = getcolpaddings(files);
+    let colpaddings: HashMap<&str, u8> = getcolpaddings(files);
     //fdefs = getrowdefs();
     //renderer = lambda r: rendercols(r, colpaddings, fdefs, full=full);
     //out = '\n'.join(map(renderer, files));
