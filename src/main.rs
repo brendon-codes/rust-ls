@@ -91,10 +91,10 @@ struct Options {
 }
 
 
-impl IntoIterator for RowRendered {
-    pub fn into_iter(self) -> IntoIter {
-        [
-            ("acls", &self.acls)
+impl RowRendered {
+    pub fn into_iter(self) -> IntoIter<(&'static str, String)> {
+        vec![
+            ("acls", self.acls)
         ].into_iter()
     }
 }
@@ -296,23 +296,24 @@ fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<Row>, E
 }
 
 
-fn getcolpaddings (rows: Vec<Row>) -> HashMap<&str, u8> {
+fn getcolpaddings (rows: Vec<Row>) -> HashMap<&'static str, u8> {
     let mut collen: u8 = 0;
     let mut longest: HashMap<&str, u8> = HashMap::new();
-    for row in rows:
+    for row in rows {
         for col in row.render.into_iter() {
             let colname: &str = col.0;
-            let colval: &str = col.1;
+            let colval: String = col.1;
             if !longest.contains_key(&colname) {
                 longest.insert(&colname, 0);
             }
-            collen = colval.len();
+            collen = colval.len() as u8;
             if let Some(x) = longest.get_mut(&colname) {
-                if collen > x {
+                if (collen as *const u8) > (x as *const u8) {
                     *x = collen;
                 }
             }
         }
+    }
     return longest;
 }
 
