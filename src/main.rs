@@ -56,6 +56,17 @@ struct RowRendered {
     // preview: String
 }
 
+#[derive(Debug)]
+struct RowPadding {
+    acls: u8
+    // owner: String,
+    // filetype: String,
+    // size: String,
+    // timeiso: String,
+    // srcname: String,
+    // targetname: String,
+    // preview: String
+}
 
 struct Row {
     info: RowInfo,
@@ -296,16 +307,16 @@ fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<Row>, E
 }
 
 
-fn getcolpaddings (rows: Vec<Row>) -> HashMap<&'static str, u8> {
+fn getcolpaddings (rows: Vec<Row>) -> RowPadding {
     let mut collen: u8 = 0;
     let mut longest: HashMap<&str, u8> = HashMap::new();
+    // Initialize values
+    longest.insert("acls", 0);
+    // Cycle through paddings
     for row in rows {
         for col in row.render.into_iter() {
             let colname: &str = col.0;
             let colval: String = col.1;
-            if !longest.contains_key(&colname) {
-                longest.insert(&colname, 0);
-            }
             collen = colval.len() as u8;
             if let Some(x) = longest.get_mut(&colname) {
                 if (collen as *const u8) > (x as *const u8) {
@@ -314,12 +325,20 @@ fn getcolpaddings (rows: Vec<Row>) -> HashMap<&'static str, u8> {
             }
         }
     }
-    return longest;
+    // Convert hashmap to struct
+    let ret: RowPadding = RowPadding {
+        acls: match longest.get("acls") {
+            Some(v) => *v,
+            None => 0
+        }
+    };
+    return ret;
 }
 
 
 fn renderrows (files: Vec<Row>, full: bool) -> Result<String, Error> {
-    let colpaddings: HashMap<&str, u8> = getcolpaddings(files);
+    let colpaddings: RowPadding = getcolpaddings(files);
+    println!("{:?}", colpaddings);
     //fdefs = getrowdefs();
     //renderer = lambda r: rendercols(r, colpaddings, fdefs, full=full);
     //out = '\n'.join(map(renderer, files));
