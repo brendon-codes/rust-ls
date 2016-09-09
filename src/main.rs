@@ -307,9 +307,13 @@ fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<Row>, E
 }
 
 
-fn getcolpaddings (rows: Vec<Row>) -> RowPadding {
+fn getcolpaddings (rows: Vec<Row>) -> Result<RowPadding, Error> {
     let mut collen: u8 = 0;
-    let mut longest: HashMap<&str, u8> = HashMap::new();
+    //
+    // This capacity needs to be increased to match the number
+    // of fields in RowPadding struct.
+    //
+    let mut longest: HashMap<&str, u8> = HashMap::with_capacity(1);
     // Initialize values
     longest.insert("acls", 0);
     // Cycle through paddings
@@ -318,13 +322,18 @@ fn getcolpaddings (rows: Vec<Row>) -> RowPadding {
             let colname: &str = col.0;
             let colval: String = col.1;
             collen = colval.len() as u8;
+            //println!("COLNAME: {}; COLVAL: {}; COLLEN: {}", &colname, &colval, &collen);
             if let Some(x) = longest.get_mut(&colname) {
-                if (collen as *const u8) > (x as *const u8) {
+                let tmp_collen: u8 = (collen as u8);
+                let tmp_x: u8 = (*x as u8);
+                //println!("tmp_collen: {:?}; tmp_x: {:?}", tmp_collen, tmp_x);
+                if tmp_collen > tmp_x {
                     *x = collen;
                 }
             }
         }
     }
+    //println!("COLLEN: {}", &collen);
     // Convert hashmap to struct
     let ret: RowPadding = RowPadding {
         acls: match longest.get("acls") {
@@ -332,12 +341,12 @@ fn getcolpaddings (rows: Vec<Row>) -> RowPadding {
             None => 0
         }
     };
-    return ret;
+    return Ok(ret);
 }
 
 
 fn renderrows (files: Vec<Row>, full: bool) -> Result<String, Error> {
-    let colpaddings: RowPadding = getcolpaddings(files);
+    let colpaddings: RowPadding = getcolpaddings(files).unwrap();
     println!("{:?}", colpaddings);
     //fdefs = getrowdefs();
     //renderer = lambda r: rendercols(r, colpaddings, fdefs, full=full);
