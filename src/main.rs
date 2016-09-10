@@ -17,6 +17,7 @@ use std::fs::{ReadDir, DirEntry, Metadata, Permissions};
 use std::iter::{Filter, Map};
 use std::os::unix::fs::{PermissionsExt, MetadataExt};
 use std::collections::{HashMap};
+use std::slice::{SliceConcatExt};
 use std::fs;
 
 use argparse::{ArgumentParser, StoreTrue as ArgStoreTrue, Store as ArgStore};
@@ -307,8 +308,7 @@ fn getfiles (start: &String, full: bool, filtres: &String) -> Result<Vec<Row>, E
 }
 
 
-fn getcolpaddings (rows: Vec<Row>) -> Result<RowPadding, Error> {
-    let mut collen: u8 = 0;
+fn getcolpaddings (rows: &Vec<Row>) -> Result<RowPadding, Error> {
     //
     // This capacity needs to be increased to match the number
     // of fields in RowPadding struct.
@@ -318,10 +318,12 @@ fn getcolpaddings (rows: Vec<Row>) -> Result<RowPadding, Error> {
     longest.insert("acls", 0);
     // Cycle through paddings
     for row in rows {
-        for col in row.render.into_iter() {
+        let row_render = &row.render;
+        let row_render_iter = &row_render.into_iter();
+        for col in row_render_iter {
             let colname: &str = col.0;
             let colval: String = col.1;
-            collen = colval.len() as u8;
+            let collen: u8 = (colval.len() as u8);
             //println!("COLNAME: {}; COLVAL: {}; COLLEN: {}", &colname, &colval, &collen);
             if let Some(x) = longest.get_mut(&colname) {
                 let tmp_collen: u8 = (collen as u8);
@@ -345,14 +347,38 @@ fn getcolpaddings (rows: Vec<Row>) -> Result<RowPadding, Error> {
 }
 
 
+fn rendercols (
+    row: &Row,
+    colpaddings: &RowPadding,
+    fdefs: &AllRowDefs,
+    full: bool
+) -> Result<String, Error> {
+    return Ok("TEST".to_string());
+    //margin = '  ';
+    //structcols = structurecols(row, colpaddings, fdefs, full=full);
+    //ret = ''.join([margin, margin.join(structcols)]);
+    //return ret;
+}
+
+
 fn renderrows (files: Vec<Row>, full: bool) -> Result<String, Error> {
-    let colpaddings: RowPadding = getcolpaddings(files).unwrap();
-    println!("{:?}", colpaddings);
-    //fdefs = getrowdefs();
-    //renderer = lambda r: rendercols(r, colpaddings, fdefs, full=full);
-    //out = '\n'.join(map(renderer, files));
-    //return out;
-    return Ok("Testing".to_string());
+    let colpaddings: RowPadding = getcolpaddings(&files).unwrap();
+    let fdefs: AllRowDefs = match getrowdefs() {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let renderer = |row: Row| -> String {
+        rendercols(
+            &row,
+            &colpaddings,
+            &fdefs,
+            full
+        ).unwrap()
+    };
+    let files_iter: IntoIter<Row> = files.into_iter();
+    let rendered: Vec<String> = files_iter.map(&renderer).collect();
+    let out: String = rendered.join("\n");
+    return Ok(out);
 }
 
 
