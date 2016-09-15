@@ -3,7 +3,7 @@
 #![allow(unused_parens)]
 #![allow(dead_code)]
 #![allow(unused_imports)]
-
+#![feature(slice_concat_ext)]
 
 extern crate argparse;
 
@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::io::{Error, ErrorKind};
 use std::result::{Result};
 use std::option::{Option};
-use std::vec::{Vec, IntoIter};
+use std::vec::{Vec, IntoIter as VecIntoIter};
 use std::fs::{ReadDir, DirEntry, Metadata, Permissions};
 use std::iter::{Filter, Map};
 use std::os::unix::fs::{PermissionsExt, MetadataExt};
@@ -103,10 +103,13 @@ struct Options {
 }
 
 
-impl RowRendered {
-    pub fn into_iter(self) -> IntoIter<(&'static str, String)> {
+impl<'a> IntoIterator for &'a RowRendered {
+    type Item = (&'static str, &'a String);
+    type IntoIter = VecIntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
         vec![
-            ("acls", self.acls)
+            ("acls", &self.acls)
         ].into_iter()
     }
 }
@@ -166,8 +169,8 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
             f.contains(filtres)
     };
     let vpaths: Vec<String> = rfiles.map(&filesmapper).collect();
-    let ipaths: IntoIter<String> = vpaths.into_iter();
-    let fpaths: Filter<IntoIter<String>, _> = ipaths.filter(&filesfilt);
+    let ipaths: VecIntoIter<String> = vpaths.into_iter();
+    let fpaths: Filter<VecIntoIter<String>, _> = ipaths.filter(&filesfilt);
     let paths: Vec<String> = fpaths.collect();
     return Ok(paths);
 }
@@ -280,8 +283,8 @@ fn processrows (files: Vec<String>, full: bool) -> Result<Vec<Row>, Error> {
     let func_build = |fname: String| -> Row {
         buildrow(fname, &fdefs, full).unwrap()
     };
-    let files_iter: IntoIter<String> = files.into_iter();
-    let files_build: Map<IntoIter<String>, _> = files_iter.map(&func_build);
+    let files_iter: VecIntoIter<String> = files.into_iter();
+    let files_build: Map<VecIntoIter<String>, _> = files_iter.map(&func_build);
     let out: Vec<Row> = files_build.collect();
     return Ok(out);
 }
@@ -318,10 +321,9 @@ fn getcolpaddings (rows: &Vec<Row>) -> Result<RowPadding, Error> {
     longest.insert("acls", 0);
     // Cycle through paddings
     for row in rows {
-        let row_render_iter: &IntoIter<(&'static str, String)> = &row.render.into_iter();
-        for col in row_render_iter {
+        for col in &row.render {
             let colname: &str = col.0;
-            let colval: String = col.1;
+            let colval: &String = &col.1;
             let collen: u8 = (colval.len() as u8);
             //println!("COLNAME: {}; COLVAL: {}; COLLEN: {}", &colname, &colval, &collen);
             if let Some(x) = longest.get_mut(&colname) {
@@ -374,7 +376,7 @@ fn renderrows (files: Vec<Row>, full: bool) -> Result<String, Error> {
             full
         ).unwrap()
     };
-    let files_iter: IntoIter<Row> = files.into_iter();
+    let files_iter: VecIntoIter<Row> = files.into_iter();
     let rendered: Vec<String> = files_iter.map(&renderer).collect();
     let out: String = rendered.join("\n");
     return Ok(out);
