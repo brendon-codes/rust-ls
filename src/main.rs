@@ -318,8 +318,7 @@ fn getcolpaddings (rows: &Vec<Row>) -> Result<RowPadding, Error> {
     longest.insert("acls", 0);
     // Cycle through paddings
     for row in rows {
-        let row_render = &row.render;
-        let row_render_iter = &row_render.into_iter();
+        let row_render_iter: &IntoIter<(&'static str, String)> = &row.render.into_iter();
         for col in row_render_iter {
             let colname: &str = col.0;
             let colval: String = col.1;
