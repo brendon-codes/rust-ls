@@ -36,6 +36,14 @@ const CONTYPE_BINOTHER: u8 = 4;
 const CONTYPE_TEXT: u8 = 5;
 const CONTYPE_OTHER: u8 = 6;
 
+const COLDEF_TARGETNAME: u8 = 0;
+const COLDEF_SRCNAME_DIR: u8 = 1;
+const COLDEF_SRCNAME_FILE: u8 = 2;
+const COLDEF_TIME: u8 = 3;
+const COLDEF_SIZE_FILECOUNT: u8 = 4;
+const COLDEF_SIZE_BYTES: u8 = 5;
+const COLDEF_ACLS: u8 = 6;
+o
 
 struct RowInfo {
     fname: String,
@@ -368,13 +376,70 @@ fn getcolslisting (full: bool) -> Result<Vec<&'static str>, Error> {
 }
 
 
+fn get_field_from_fdefs (
+    field: &'static str,
+    fdefs: &AllRowDefs
+) -> Result<&RowDef, Error> {
+    if field == "acls" {
+        return Ok(&fdefs.acls);
+    }
+    return Err(Error::new(ErrorKind::Other, "Bad Fdef!"));
+}
+
+
+fn getcolordefs (row, field) {
+    if field == "targetname" {
+        clr = "targetname";
+    }
+    else if field == "srcname" {
+        if row.info.ftype == "directory" {
+            clr = "srcname_directory";
+        }
+        else {
+            clr = "srcname_file";
+        }
+    }
+    else if field == "timeiso" {
+        clr = "time";
+    }
+    else if field == "size" {
+        if row.info.ftype == "directory" {
+            clr = "size_filecount";
+        }
+        else {
+            clr = "size_bytes";
+        }
+    }
+    else if field == "acls" {
+        clr = "acls";
+    }
+    else if field == "owner" {
+        clr = "owner";
+    }
+    else if field == "size" {
+        clr = "size";
+    }
+    else if field == "filetype" {
+        clr = "filetype";
+    }
+    else if field == "preview" {
+        clr = "preview";
+    }
+    else {
+        clr = "default";
+    }
+    return clr;
+}
+
+
 fn makepretty (
     row: &Row,
     field: &'static str,
     colpaddings: &RowPadding,
     fdefs: &AllRowDefs
 ) {
-    let align = fdefs[field]["align"];
+    let fdef_field: &RowDef = get_field_from_fdefs(field).unwrap();
+    let align: u8 = fdef_field.align;
     let clr = getcolordefs(row, field);
     let clrval = COLOR_VALS[clr];
     let textval = row["render"][field];
