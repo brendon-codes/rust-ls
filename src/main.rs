@@ -348,17 +348,68 @@ fn getcolpaddings (rows: &Vec<Row>) -> Result<RowPadding, Error> {
 }
 
 
+fn getcolslisting (full: bool) -> Result<Vec<&'static str>, Error> {
+    let mut out: Vec<&'static str> = vec![];
+    out.push("acls");
+    // if full {
+    //     out.push("acls");
+    //     out.push("owner");
+    //     out.push("filetype");
+    // }
+    // out.push("size");
+    // out.push("timeiso");
+    // out.push("srcname");
+    // out.push("targetname");
+    // if full {
+    //     out.push("preview");
+    // }
+    let ret: Vec<&'static str> = out;
+    return Ok(ret);
+}
+
+
+fn makepretty (
+    row: &Row,
+    field: &'static str,
+    colpaddings: &RowPadding,
+    fdefs: &AllRowDefs
+) {
+    let align = fdefs[field]["align"];
+    let clr = getcolordefs(row, field);
+    let clrval = COLOR_VALS[clr];
+    let textval = row["render"][field];
+    let paddedval = addpadding(field, textval, colpaddings, align);
+    let colorval = addcolor(paddedval, clrval);
+    return colorval;
+}
+
+
+fn structurecols (
+    row: &Row,
+    colpaddings: &RowPadding,
+    fdefs: &AllRowDefs,
+    full: bool
+) {
+    let colslisting: Vec<&'static str> = getcolslisting(full).unwrap();
+    let func = |name: &'static str| ->  {
+        makepretty(row, name, colpaddings, fdefs)
+    };
+    let ret = map(func, colslisting);
+    return ret;
+}
+
+
 fn rendercols (
     row: &Row,
     colpaddings: &RowPadding,
     fdefs: &AllRowDefs,
     full: bool
 ) -> Result<String, Error> {
-    return Ok("TEST".to_string());
     //margin = '  ';
-    //structcols = structurecols(row, colpaddings, fdefs, full=full);
+    let structcols = structurecols(row, colpaddings, fdefs, full);
     //ret = ''.join([margin, margin.join(structcols)]);
     //return ret;
+    return Ok("TEST".to_string());
 }
 
 
