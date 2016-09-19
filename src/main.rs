@@ -43,7 +43,11 @@ const COLDEF_TIME: u8 = 3;
 const COLDEF_SIZE_FILECOUNT: u8 = 4;
 const COLDEF_SIZE_BYTES: u8 = 5;
 const COLDEF_ACLS: u8 = 6;
-o
+const COLDEF_OWNER: u8 = 7;
+const COLDEF_SIZE: u8 = 8;
+const COLDEF_FILETYPE: u8 = 9;
+const COLDEF_PREVIEW: u8 = 10;
+const COLDEF_DEFAULT: u8 = 11;
 
 struct RowInfo {
     fname: String,
@@ -387,46 +391,46 @@ fn get_field_from_fdefs (
 }
 
 
-fn getcolordefs (row, field) {
+fn getcolordefs (row: &Row, field) -> u8 {
     if field == "targetname" {
-        clr = "targetname";
+        let clr: u8 = COLDEF_TARGETNAME;
     }
     else if field == "srcname" {
         if row.info.ftype == "directory" {
-            clr = "srcname_directory";
+            let clr: u8 = COLDEF_SRCNAME_DIR;
         }
         else {
-            clr = "srcname_file";
+            let clr: u8 = COLDEF_SRCNAME_FILE;
         }
     }
     else if field == "timeiso" {
-        clr = "time";
+        let clr: u8 = COLDEF_TIME;
     }
     else if field == "size" {
         if row.info.ftype == "directory" {
-            clr = "size_filecount";
+            let clr: u8 = COLDEF_SIZE_FILECOUNT;
         }
         else {
-            clr = "size_bytes";
+            let clr: u8 = COLDEF_SIZE_BYTES;
         }
     }
     else if field == "acls" {
-        clr = "acls";
+        let clr: u8 = COLDEF_ACLS;
     }
     else if field == "owner" {
-        clr = "owner";
+        let clr: u8 = COLDEF_OWNER;
     }
     else if field == "size" {
-        clr = "size";
+        let clr: u8 = COLDEF_SIZE;
     }
     else if field == "filetype" {
-        clr = "filetype";
+        let clr: u8 = COLDEF_FILETYPE;
     }
     else if field == "preview" {
-        clr = "preview";
+        let clr: u8 = COLDEF_PREVIEW;
     }
     else {
-        clr = "default";
+        let clr: u8 = COLDEF_DEFAULT;
     }
     return clr;
 }
