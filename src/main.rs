@@ -49,6 +49,15 @@ const COLDEF_FILETYPE: u8 = 9;
 const COLDEF_PREVIEW: u8 = 10;
 const COLDEF_DEFAULT: u8 = 11;
 
+const FIELDNAME_ACLS: u8 = 0;
+const FIELDNAME_OWNER: u8 = 1;
+const FIELDNAME_FILETYPE: u8 = 2;
+const FIELDNAME_SIZE: u8 = 3;
+const FIELDNAME_TIMEISO: u8 = 4;
+const FIELDNAME_SRCNAME: u8 = 5;
+const FIELDNAME_TARGETNAME: u8 = 6;
+const FIELDNAME_PREVIEW: u8 = 7;
+
 struct RowInfo {
     fname: String,
     stat_res: Metadata,
@@ -71,7 +80,7 @@ struct RowRendered {
 
 #[derive(Debug)]
 struct RowPadding {
-    acls: u8
+    acls: String
     // owner: String,
     // filetype: String,
     // size: String,
@@ -88,7 +97,7 @@ struct Row {
 
 
 struct RowDef {
-    name: &'static str,
+    name: u8,
     onlyfull: bool,
     align: u8,
     func: (fn (&RowInfo) -> Result<String, Error>)
@@ -116,12 +125,12 @@ struct Options {
 
 
 impl<'a> IntoIterator for &'a RowRendered {
-    type Item = (&'static str, &'a String);
+    type Item = (u8, &'a String);
     type IntoIter = VecIntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
         vec![
-            ("acls", &self.acls)
+            (FIELDNAME_ACLS, &self.acls)
         ].into_iter()
     }
 }
@@ -216,7 +225,7 @@ fn col_acls (rowinfo: &RowInfo) -> Result<String, Error> {
 fn getrowdefs () -> Result<AllRowDefs, Error> {
     let rowdefs: AllRowDefs = AllRowDefs {
         acls: RowDef {
-            name: "acls",
+            name: FIELDNAME_ACLS,
             func: col_acls,
             onlyfull: true,
             align: ROWDEF_ALIGN_LEFT
@@ -330,15 +339,15 @@ fn getcolpaddings (rows: &Vec<Row>) -> Result<RowPadding, Error> {
     //
     let mut longest: HashMap<&str, u8> = HashMap::with_capacity(1);
     // Initialize values
-    longest.insert("acls", 0);
+    longest.insert(FIELDNAME_ACLS, 0);
     // Cycle through paddings
     for row in rows {
         for col in &row.render {
-            let colname: &str = col.0;
+            let colname: u8 = col.0;
             let colval: &String = &col.1;
             let collen: u8 = (colval.len() as u8);
             //println!("COLNAME: {}; COLVAL: {}; COLLEN: {}", &colname, &colval, &collen);
-            if let Some(x) = longest.get_mut(&colname) {
+            if let Some(x) = longest.get_mut(colname) {
                 let tmp_collen: u8 = (collen as u8);
                 let tmp_x: u8 = (*x as u8);
                 //println!("tmp_collen: {:?}; tmp_x: {:?}", tmp_collen, tmp_x);
@@ -348,10 +357,14 @@ fn getcolpaddings (rows: &Vec<Row>) -> Result<RowPadding, Error> {
             }
         }
     }
-    //println!("COLLEN: {}", &collen);
+    //
     // Convert hashmap to struct
+    //
     let ret: RowPadding = RowPadding {
-        acls: match longest.get("acls") {
+        //
+        // ACLS
+        //
+        acls: match longest.get(FIELDNAME_ACLS) {
             Some(v) => *v,
             None => 0
         }
@@ -360,42 +373,43 @@ fn getcolpaddings (rows: &Vec<Row>) -> Result<RowPadding, Error> {
 }
 
 
-fn getcolslisting (full: bool) -> Result<Vec<&'static str>, Error> {
-    let mut out: Vec<&'static str> = vec![];
-    out.push("acls");
+fn getcolslisting (full: bool) -> Result<Vec<u8>, Error> {
+    let mut out: Vec<u8> = vec![];
+    // This is just temporary
+    out.push(FIELDNAME_ACLS);
     // if full {
-    //     out.push("acls");
-    //     out.push("owner");
-    //     out.push("filetype");
+    //     out.push(FIELDNAME_ACLS);
+    //     out.push(FIELDNAME_OWNER);
+    //     out.push(FIELDNAME_FILETYPE);
     // }
-    // out.push("size");
-    // out.push("timeiso");
-    // out.push("srcname");
-    // out.push("targetname");
+    // out.push(FIELDNAME_SIZE);
+    // out.push(FIELDNAME_TIMEISO);
+    // out.push(FIELDNAME_SRCNAME);
+    // out.push(FIELDNAME_TARGETNAME);
     // if full {
-    //     out.push("preview");
+    //     out.push(FIELDNAME_PREVIEW);
     // }
-    let ret: Vec<&'static str> = out;
+    let ret: Vec<u8> = out;
     return Ok(ret);
 }
 
 
 fn get_field_from_fdefs (
-    field: &'static str,
+    field: u8,
     fdefs: &AllRowDefs
 ) -> Result<&RowDef, Error> {
-    if field == "acls" {
+    if field == FIELDNAME_ACLS {
         return Ok(&fdefs.acls);
     }
     return Err(Error::new(ErrorKind::Other, "Bad Fdef!"));
 }
 
 
-fn getcolordefs (row: &Row, field) -> u8 {
-    if field == "targetname" {
+fn getcolordefs (row: &Row, field: u8) -> Result<u8, Error> {
+    if field == FIELDNAME_TARGETNAME {
         let clr: u8 = COLDEF_TARGETNAME;
     }
-    else if field == "srcname" {
+    else if field == FIELDNAME_SRCNAME {
         if row.info.ftype == "directory" {
             let clr: u8 = COLDEF_SRCNAME_DIR;
         }
@@ -403,10 +417,10 @@ fn getcolordefs (row: &Row, field) -> u8 {
             let clr: u8 = COLDEF_SRCNAME_FILE;
         }
     }
-    else if field == "timeiso" {
+    else if field == FIELDNAME_TIMEISO {
         let clr: u8 = COLDEF_TIME;
     }
-    else if field == "size" {
+    else if field == FIELDNAME_SIZE {
         if row.info.ftype == "directory" {
             let clr: u8 = COLDEF_SIZE_FILECOUNT;
         }
@@ -414,37 +428,37 @@ fn getcolordefs (row: &Row, field) -> u8 {
             let clr: u8 = COLDEF_SIZE_BYTES;
         }
     }
-    else if field == "acls" {
+    else if field == FIELDNAME_ACLS {
         let clr: u8 = COLDEF_ACLS;
     }
-    else if field == "owner" {
+    else if field == FIELDNAME_OWNER {
         let clr: u8 = COLDEF_OWNER;
     }
-    else if field == "size" {
+    else if field == FIELDNAME_SIZE {
         let clr: u8 = COLDEF_SIZE;
     }
-    else if field == "filetype" {
+    else if field == FIELDNAME_FILETYPE {
         let clr: u8 = COLDEF_FILETYPE;
     }
-    else if field == "preview" {
+    else if field == FIELDNAME_PREVIEW {
         let clr: u8 = COLDEF_PREVIEW;
     }
     else {
         let clr: u8 = COLDEF_DEFAULT;
     }
-    return clr;
+    return Ok(clr);
 }
 
 
 fn makepretty (
     row: &Row,
-    field: &'static str,
+    field: u8,
     colpaddings: &RowPadding,
     fdefs: &AllRowDefs
 ) {
     let fdef_field: &RowDef = get_field_from_fdefs(field).unwrap();
     let align: u8 = fdef_field.align;
-    let clr = getcolordefs(row, field);
+    let clr: u8 = getcolordefs(row, field).unwrap();
     let clrval = COLOR_VALS[clr];
     let textval = row["render"][field];
     let paddedval = addpadding(field, textval, colpaddings, align);
@@ -459,8 +473,8 @@ fn structurecols (
     fdefs: &AllRowDefs,
     full: bool
 ) {
-    let colslisting: Vec<&'static str> = getcolslisting(full).unwrap();
-    let func = |name: &'static str| ->  {
+    let colslisting: Vec<u8> = getcolslisting(full).unwrap();
+    let func = |name: u8| ->  {
         makepretty(row, name, colpaddings, fdefs)
     };
     let ret = map(func, colslisting);
