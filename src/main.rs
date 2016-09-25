@@ -58,6 +58,46 @@ const FIELDNAME_SRCNAME: u8 = 5;
 const FIELDNAME_TARGETNAME: u8 = 6;
 const FIELDNAME_PREVIEW: u8 = 7;
 
+const CLR_RED: &'static str = "\033[31m";
+const CLR_MAGENTA: &'static str = "\033[35m";
+const CLR_LIGHT_MAGENTA: &'static str = "\033[95m";
+const CLR_GREEN: &'static str = "\033[32m";
+const CLR_LIGHT_GREEN: &'static str = "\033[92m";
+const CLR_LIGHT_CYAN: &'static str = "\033[96m";
+const CLR_LIGHT_YELLOW: &'static str = "\033[93m";
+const CLR_LIGHT_GRAY: &'static str = "\033[37m";
+const CLR_DARK_GRAY: &'static str = "\033[30m";
+const CLR_LIGHT_RED: &'static str = "\033[91m";
+const CLR_LIGHT_BLUE: &'static str = "\033[31m";
+const CLR_BLUE: &'static str = "\033[34m";
+const CLR_END: &'static str = "\033[0m";
+
+const CLRID_RED: u8 = 0;
+const CLRID_MAGENTA: u8 = 1;
+const CLRID_LIGHT_MAGENTA: u8 = 2;
+const CLRID_GREEN: u8 = 3;
+const CLRID_LIGHT_GREEN: u8 = 4;
+const CLRID_LIGHT_CYAN: u8 = 5;
+const CLRID_LIGHT_YELLOW: u8 = 6;
+const CLRID_LIGHT_GRAY: u8 = 7;
+const CLRID_DARK_GRAY: u8 = 8;
+const CLRID_LIGHT_RED: u8 = 9;
+const CLRID_LIGHT_BLUE: u8 = 10;
+const CLRID_BLUE: u8 = 11;
+
+const CLRVAL_TARGETNAME: u8 = CLRID_LIGHT_CYAN;
+const CLRVAL_SRCNAME_DIR: u8 = CLRID_LIGHT_RED;
+const CLRVAL_SRCNAME_FILE: u8 = CLRID_LIGHT_GREEN;
+const CLRVAL_TIME: u8 = CLRID_BLUE;
+const CLRVAL_SIZE_FILECOUNT: u8 = CLRID_MAGENTA;
+const CLRVAL_SIZE_BYTES: u8 = CLRID_GREEN;
+const CLRVAL_ACLS: u8 = CLRID_DARK_GRAY;
+const CLRVAL_OWNER: u8 = CLRID_DARK_GRAY;
+const CLRVAL_FILETYPE: u8 = CLRID_DARK_GRAY;
+const CLRVAL_PREVIEW: u8 = CLRID_DARK_GRAY;
+const CLRVAL_DEFAULT: u8 = CLRID_LIGHT_MAGENTA;
+
+
 struct RowInfo {
     fname: String,
     stat_res: Metadata,
@@ -405,48 +445,134 @@ fn get_field_from_fdefs (
 }
 
 
-fn getcolordefs (row: &Row, field: u8) -> Result<u8, Error> {
+fn getcolefs (row: &Row, field: u8) -> Result<u8, Error> {
     if field == FIELDNAME_TARGETNAME {
-        let clr: u8 = COLDEF_TARGETNAME;
+        let col: u8 = COLDEF_TARGETNAME;
     }
     else if field == FIELDNAME_SRCNAME {
         if row.info.ftype == "directory" {
-            let clr: u8 = COLDEF_SRCNAME_DIR;
+            let col: u8 = COLDEF_SRCNAME_DIR;
         }
         else {
-            let clr: u8 = COLDEF_SRCNAME_FILE;
+            let col: u8 = COLDEF_SRCNAME_FILE;
         }
     }
     else if field == FIELDNAME_TIMEISO {
-        let clr: u8 = COLDEF_TIME;
+        let col: u8 = COLDEF_TIME;
     }
     else if field == FIELDNAME_SIZE {
         if row.info.ftype == "directory" {
-            let clr: u8 = COLDEF_SIZE_FILECOUNT;
+            let col: u8 = COLDEF_SIZE_FILECOUNT;
         }
         else {
-            let clr: u8 = COLDEF_SIZE_BYTES;
+            let col: u8 = COLDEF_SIZE_BYTES;
         }
     }
     else if field == FIELDNAME_ACLS {
-        let clr: u8 = COLDEF_ACLS;
+        let col: u8 = COLDEF_ACLS;
     }
     else if field == FIELDNAME_OWNER {
-        let clr: u8 = COLDEF_OWNER;
+        let col: u8 = COLDEF_OWNER;
     }
     else if field == FIELDNAME_SIZE {
-        let clr: u8 = COLDEF_SIZE;
+        let col: u8 = COLDEF_SIZE;
     }
     else if field == FIELDNAME_FILETYPE {
-        let clr: u8 = COLDEF_FILETYPE;
+        let col: u8 = COLDEF_FILETYPE;
     }
     else if field == FIELDNAME_PREVIEW {
-        let clr: u8 = COLDEF_PREVIEW;
+        let col: u8 = COLDEF_PREVIEW;
     }
     else {
-        let clr: u8 = COLDEF_DEFAULT;
+        let col: u8 = COLDEF_DEFAULT;
     }
-    return Ok(clr);
+    return Ok(col);
+}
+
+
+fn getcolorval (coldef: u8) -> Result<u8, Error> {
+    if (coldef == COLDEF_TARGETNAME) {
+        let val: u8 = CLRVAL_TARGETNAME;
+    }
+    else if (coldef == COLDEF_SRCNAME_DIR) {
+        let val: u8 = CLRVAL_SRCNAME_DIR;
+    }
+    else if (coldef == COLDEF_SRCNAME_FILE) {
+        let val: u8 = CLRVAL_SRCNAME_FILE;
+    }
+    else if (coldef == COLDEF_TIME) {
+        let val: u8 = CLRVAL_TIME;
+    }
+    else if (coldef == COLDEF_SIZE_FILECOUNT) {
+        let val: u8 = CLRVAL_SIZE_FILECOUNT;
+    }
+    else if (coldef == COLDEF_SIZE_BYTES) {
+        let val: u8 = CLRVAL_SIZE_BYTES;
+    }
+    else if (coldef == COLDEF_ACLS) {
+        let val: u8 = CLRVAL_ACLS;
+    }
+    else if (coldef == CLRDEF_OWNER) {
+        let val: u8 = CLRVAL_OWNER;
+    }
+    else if (coldef == COLDEF_FILETYPE) {
+        let val: u8 = CLRVAL_FILETYPE;
+    }
+    else if (coldef == COLDEF_PREVIEW) {
+        let val: u8 = CLRVAL_PREVIEW;
+    }
+    else if (coldef == COLDEF_DEFAULT) {
+        let val: u8 = CLRVAL_DEFAULT;
+    }
+    return Ok(val);
+}
+
+
+fn get_rowrenderedfield (
+    rowrendered: &RowRendered,
+    field: u8
+) -> Result<&String, Error> {
+    if (field == FIELDNAME_ACLS) {
+        return Ok(&rowrendered.acls);
+    }
+    else if (field == FIELDNAME_OWNER) {
+        return Ok(&rowrendered.owner);
+    }
+    else if (field == FIELDNAME_FILETYPE) {
+        return Ok(&rowrendered.filetype);
+    }
+    else if (field == FIELDNAME_SIZE) {
+        return Ok(&rowrendered.size);
+    }
+    else if (field == FIELDNAME_TIMEISO) {
+        return Ok(&rowrendered.timeiso);
+    }
+    else if (field == FIELDNAME_SRCNAME) {
+        return Ok(&rowrendered.srcname);
+    }
+    else if (field == FIELDNAME_TARGETNAME) {
+        return Ok(&rowrendered.targetname);
+    }
+    else if (field == FIELDNAME_PREVIEW) {
+        let Ok(&rowrendered.preview);
+    }
+    return Err(Error::new(ErrorKind::Other, "Bad field"));
+}
+
+
+fn addpadding (
+    field: u8,
+    val: &String,
+    colpaddings: &RowPadding,
+    align: u8
+) -> Result<&String, Error> {
+    if len(val) == 0:
+        return ' '
+    alignchar = '>' if (align == 'right') else '<'
+    padlen = colpaddings[field]
+    padstr = ''.join(['{:', alignchar, str(padlen), 's}'])
+    ret = padstr.format(val)
+    return ret
 }
 
 
@@ -458,10 +584,10 @@ fn makepretty (
 ) {
     let fdef_field: &RowDef = get_field_from_fdefs(field).unwrap();
     let align: u8 = fdef_field.align;
-    let clr: u8 = getcolordefs(row, field).unwrap();
-    let clrval = COLOR_VALS[clr];
-    let textval = row["render"][field];
-    let paddedval = addpadding(field, textval, colpaddings, align);
+    let col: u8 = getcoldefs(row, field).unwrap();
+    let clrval: u8 = getcolorval(col).unwrap();
+    let textval: &String = get_rowrenderedfield(&row.render, field).unwrap();
+    let paddedval: &String = addpadding(field, textval, colpaddings, align);
     let colorval = addcolor(paddedval, clrval);
     return colorval;
 }
