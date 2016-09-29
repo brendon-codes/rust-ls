@@ -108,27 +108,40 @@ struct RowInfo {
 
 #[derive(Debug)]
 struct RowRendered {
-    acls: String
-    // owner: String,
-    // filetype: String,
-    // size: String,
-    // timeiso: String,
-    // srcname: String,
-    // targetname: String,
-    // preview: String
+    acls: String,
+    owner: String,
+    filetype: String,
+    size: String,
+    timeiso: String,
+    srcname: String,
+    targetname: String,
+    preview: String
 }
 
 #[derive(Debug)]
 struct RowPadding {
-    acls: String
-    // owner: String,
-    // filetype: String,
-    // size: String,
-    // timeiso: String,
-    // srcname: String,
-    // targetname: String,
-    // preview: String
+    acls: String,
+    owner: String,
+    filetype: String,
+    size: String,
+    timeiso: String,
+    srcname: String,
+    targetname: String,
+    preview: String
 }
+
+
+struct AllRowDefs {
+    acls: RowDef,
+    owner: RowDef,
+    filetype: RowDef,
+    size: RowDef,
+    timeiso: RowDef,
+    srcname: RowDef,
+    targetname: RowDef,
+    preview: RowDef
+}
+
 
 struct Row {
     info: RowInfo,
@@ -141,18 +154,6 @@ struct RowDef {
     onlyfull: bool,
     align: u8,
     func: (fn (&RowInfo) -> Result<String, Error>)
-}
-
-
-struct AllRowDefs {
-    acls: RowDef
-    // owner: RowDef,
-    // filetype: RowDef,
-    // size: RowDef,
-    // timeiso: RowDef,
-    // srcname: RowDef,
-    // targetname: RowDef,
-    // preview: RowDef
 }
 
 
@@ -170,7 +171,14 @@ impl<'a> IntoIterator for &'a RowRendered {
 
     fn into_iter(self) -> Self::IntoIter {
         vec![
-            (FIELDNAME_ACLS, &self.acls)
+            (FIELDNAME_ACLS, &self.acls),
+            (FIELDNAME_OWNER, &self.owner),
+            (FIELDNAME_FILETYPE, &self.filetype),
+            (FIELDNAME_SIZE, &self.size),
+            (FIELDNAME_TIMEISO, &self.timeiso),
+            (FIELDNAME_SRCNAME, &self.srcname),
+            (FIELDNAME_TARGETNAME, &self.targetname),
+            (FIELDNAME_PREVIEW, &self.preview)
         ].into_iter()
     }
 }
@@ -237,20 +245,8 @@ fn get_dir_listing (start: &String, filtres: &String) -> Result<Vec<String>, Err
 }
 
 
-fn get_acls_all (fname: &String, stat_res: &Metadata) -> Result<String, Error> {
-    //let all_acls_mode = str(oct(stat.S_IMODE(stat_res.st_mode)))[-3:];
-    let all_acls_mode: String = stat_res.mode().to_string();
-    return Ok(all_acls_mode);
-}
-
-
 fn col_acls (rowinfo: &RowInfo) -> Result<String, Error> {
-    let all_acls_mode: String = {
-        match get_acls_all(&rowinfo.fname, &rowinfo.stat_res) {
-            Ok(v) => v,
-            Err(e) => return Err(e)
-        }
-    };
+    let all_acls_mode: String = rowinfo.stat_res.mode().to_string();
     //let me_acls_mode: String =  match get_acls_me(&fname, &stat_res) {
     //    Ok(v) => v,
     //    Err(e) => return Err(e)
@@ -261,12 +257,95 @@ fn col_acls (rowinfo: &RowInfo) -> Result<String, Error> {
 }
 
 
+fn col_owner (rowinfo: &RowInfo) -> Result<String, Error> {
+    let ret: String = "OWNER".to_string();
+    return Ok(ret);
+}
+
+
+fn col_filetype (rowinfo: &RowInfo) -> Result<String, Error> {
+    let ret: String = "FILETYPE".to_string();
+    return Ok(ret);
+}
+
+
+fn col_size (rowinfo: &RowInfo) -> Result<String, Error> {
+    let ret: String = "SIZE".to_string();
+    return Ok(ret);
+}
+
+
+fn col_timeiso (rowinfo: &RowInfo) -> Result<String, Error> {
+    let ret: String = "TIMEISO".to_string();
+    return Ok(ret);
+}
+
+
+fn col_srcname (rowinfo: &RowInfo) -> Result<String, Error> {
+    let ret: String = "SRCNAME".to_string();
+    return Ok(ret);
+}
+
+
+fn col_targetname (rowinfo: &RowInfo) -> Result<String, Error> {
+    let ret: String = "TARGETNAME".to_string();
+    return Ok(ret);
+}
+
+
+fn col_preview (rowinfo: &RowInfo) -> Result<String, Error> {
+    let ret: String = "PREVIEW".to_string();
+    return Ok(ret);
+}
+
 
 fn getrowdefs () -> Result<AllRowDefs, Error> {
     let rowdefs: AllRowDefs = AllRowDefs {
         acls: RowDef {
             name: FIELDNAME_ACLS,
             func: col_acls,
+            onlyfull: true,
+            align: ROWDEF_ALIGN_LEFT
+        },
+        owner: RowDef {
+            name: FIELDNAME_OWNER,
+            func: col_owner,
+            onlyfull: true,
+            align: ROWDEF_ALIGN_LEFT
+        },
+        filetype: RowDef {
+            name: FIELDNAME_FILETYPE,
+            func: col_filetype,
+            onlyfull: true,
+            align: ROWDEF_ALIGN_LEFT
+        },
+        size: RowDef {
+            name: FIELDNAME_SIZE,
+            func: col_size,
+            onlyfull: true,
+            align: ROWDEF_ALIGN_LEFT
+        },
+        timeiso: RowDef {
+            name: FIELDNAME_TIMEISO,
+            func: col_timeiso,
+            onlyfull: true,
+            align: ROWDEF_ALIGN_LEFT
+        },
+        srcname: RowDef {
+            name: FIELDNAME_SRCNAME,
+            func: col_srcname,
+            onlyfull: true,
+            align: ROWDEF_ALIGN_LEFT
+        },
+        targetname: RowDef {
+            name: FIELDNAME_TARGETNAME,
+            func: col_targetname,
+            onlyfull: true,
+            align: ROWDEF_ALIGN_LEFT
+        },
+        preview: RowDef {
+            name: FIELDNAME_PREVIEW,
+            func: col_preview,
             onlyfull: true,
             align: ROWDEF_ALIGN_LEFT
         }
@@ -305,12 +384,48 @@ fn get_fileinfo_rendered (fdefs: &AllRowDefs, rowinfo: &RowInfo) -> Result<RowRe
     //     )
     // )
     // return dict(map(func, fdefs.values()))
-    let acls: String = match (fdefs.acls.func)(&rowinfo) {
+    let val_acls: String = match (fdefs.acls.func)(&rowinfo) {
         Ok(v) => v,
         Err(e) => return Err(e)
     };
+    let val_owner: String = match (fdefs.owner.func)(&rowinfo) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let val_filetype: String = match (fdefs.filetype.func)(&rowinfo) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let val_size: String = match (fdefs.size.func)(&rowinfo) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let val_timeiso: String = match (fdefs.timeiso.func)(&rowinfo) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let val_srcname: String = match (fdefs.srcname.func)(&rowinfo) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let val_targetname: String = match (fdefs.targetname.func)(&rowinfo) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    let val_preview: String = match (fdefs.preview.func)(&rowinfo) {
+        Ok(v) => v,
+        Err(e) => return Err(e)
+    };
+    // Build output struct
     let ret: RowRendered = RowRendered {
-        acls: acls
+        acls: val_acls,
+        owner: val_owner,
+        filetype: val_filetype,
+        size: val_size,
+        timeiso: val_timeiso,
+        srcname: val_srcname,
+        targetname: val_targetname,
+        preview: val_preview
     };
     return Ok(ret);
 }
@@ -378,9 +493,20 @@ fn getcolpaddings (rows: &Vec<Row>) -> Result<RowPadding, Error> {
     // of fields in RowPadding struct.
     //
     let mut longest: HashMap<&str, u8> = HashMap::with_capacity(1);
+    //
     // Initialize values
+    //
     longest.insert(FIELDNAME_ACLS, 0);
+    longest.insert(FIELDNAME_OWNER, 0);
+    longest.insert(FIELDNAME_FILETYPE, 0);
+    longest.insert(FIELDNAME_SIZE, 0);
+    longest.insert(FIELDNAME_TIMEISO, 0);
+    longest.insert(FIELDNAME_SRCNAME, 0);
+    longest.insert(FIELDNAME_TARGETNAME, 0);
+    longest.insert(FIELDNAME_PREVIEW, 0);
+    //
     // Cycle through paddings
+    //
     for row in rows {
         for col in &row.render {
             let colname: u8 = col.0;
@@ -407,6 +533,34 @@ fn getcolpaddings (rows: &Vec<Row>) -> Result<RowPadding, Error> {
         acls: match longest.get(FIELDNAME_ACLS) {
             Some(v) => *v,
             None => 0
+        },
+        owner: match longest.get(FIELDNAME_OWNER) {
+            Some(v) => *v,
+            None => 0
+        },
+        filetype: match longest.get(FIELDNAME_FILETYPE) {
+            Some(v) => *v,
+            None => 0
+        },
+        size: match longest.get(FIELDNAME_SIZE) {
+            Some(v) => *v,
+            None => 0
+        },
+        timeiso: match longest.get(FIELDNAME_TIMEISO) {
+            Some(v) => *v,
+            None => 0
+        },
+        srcname: match longest.get(FIELDNAME_SRCNAME) {
+            Some(v) => *v,
+            None => 0
+        },
+        targetname: match longest.get(FIELDNAME_TARGETNAME) {
+            Some(v) => *v,
+            None => 0
+        },
+        preview: match longest.get(FIELDNAME_PREVIEW) {
+            Some(v) => *v,
+            None => 0
         }
     };
     return Ok(ret);
@@ -416,19 +570,18 @@ fn getcolpaddings (rows: &Vec<Row>) -> Result<RowPadding, Error> {
 fn getcolslisting (full: bool) -> Result<Vec<u8>, Error> {
     let mut out: Vec<u8> = vec![];
     // This is just temporary
-    out.push(FIELDNAME_ACLS);
-    // if full {
-    //     out.push(FIELDNAME_ACLS);
-    //     out.push(FIELDNAME_OWNER);
-    //     out.push(FIELDNAME_FILETYPE);
-    // }
-    // out.push(FIELDNAME_SIZE);
-    // out.push(FIELDNAME_TIMEISO);
-    // out.push(FIELDNAME_SRCNAME);
-    // out.push(FIELDNAME_TARGETNAME);
-    // if full {
-    //     out.push(FIELDNAME_PREVIEW);
-    // }
+    if full {
+         out.push(FIELDNAME_ACLS);
+         out.push(FIELDNAME_OWNER);
+         out.push(FIELDNAME_FILETYPE);
+    }
+    out.push(FIELDNAME_SIZE);
+    out.push(FIELDNAME_TIMEISO);
+    out.push(FIELDNAME_SRCNAME);
+    out.push(FIELDNAME_TARGETNAME);
+    if full {
+        out.push(FIELDNAME_PREVIEW);
+    }
     let ret: Vec<u8> = out;
     return Ok(ret);
 }
@@ -441,6 +594,27 @@ fn get_field_from_fdefs (
     if field == FIELDNAME_ACLS {
         return Ok(&fdefs.acls);
     }
+    if field == FIELDNAME_OWNER {
+        return Ok(&fdefs.owner);
+    }
+    if field == FIELDNAME_FILETYPE {
+        return Ok(&fdefs.filetype);
+    }
+    if field == FIELDNAME_SIZE {
+        return Ok(&fdefs.size);
+    }
+    if field == FIELDNAME_TIMEISO {
+        return Ok(&fdefs.timeiso);
+    }
+    if field == FIELDNAME_SRCNAME {
+        return Ok(&fdefs.srcname);
+    }
+    if field == FIELDNAME_TARGETNAME {
+        return Ok(&fdefs.targetname);
+    }
+    if field == FIELDNAME_PREVIEW {
+        return Ok(&fdefs.preview);
+    }
     return Err(Error::new(ErrorKind::Other, "Bad Fdef!"));
 }
 
@@ -450,7 +624,7 @@ fn getcolefs (row: &Row, field: u8) -> Result<u8, Error> {
         let col: u8 = COLDEF_TARGETNAME;
     }
     else if field == FIELDNAME_SRCNAME {
-        if row.info.ftype == "directory" {
+        if row.info.ftype == FTYPE_DIR {
             let col: u8 = COLDEF_SRCNAME_DIR;
         }
         else {
@@ -461,7 +635,7 @@ fn getcolefs (row: &Row, field: u8) -> Result<u8, Error> {
         let col: u8 = COLDEF_TIME;
     }
     else if field == FIELDNAME_SIZE {
-        if row.info.ftype == "directory" {
+        if row.info.ftype == FTYPE_DIR {
             let col: u8 = COLDEF_SIZE_FILECOUNT;
         }
         else {
@@ -566,11 +740,19 @@ fn addpadding (
     colpaddings: &RowPadding,
     align: u8
 ) -> Result<&String, Error> {
-    if len(val) == 0:
-        return ' '
-    alignchar = '>' if (align == 'right') else '<'
+    if val.len() == 0 {
+        return Ok(" ".to_string())
+    }
+    let alignchar: &'static str = {
+        if align == ROWDEF_ALIGN_RIGHT {
+            ">"
+        }
+        else {
+            "<"
+        }
+    }
     padlen = colpaddings[field]
-    padstr = ''.join(['{:', alignchar, str(padlen), 's}'])
+    let padstr: String = ''.join(['{:', alignchar, str(padlen), 's}'])
     ret = padstr.format(val)
     return ret
 }
