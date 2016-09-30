@@ -322,25 +322,25 @@ fn getrowdefs () -> Result<AllRowDefs, Error> {
         size: RowDef {
             name: FIELDNAME_SIZE,
             func: col_size,
-            onlyfull: true,
+            onlyfull: false,
             align: ROWDEF_ALIGN_LEFT
         },
         timeiso: RowDef {
             name: FIELDNAME_TIMEISO,
             func: col_timeiso,
-            onlyfull: true,
+            onlyfull: false,
             align: ROWDEF_ALIGN_LEFT
         },
         srcname: RowDef {
             name: FIELDNAME_SRCNAME,
             func: col_srcname,
-            onlyfull: true,
+            onlyfull: false,
             align: ROWDEF_ALIGN_LEFT
         },
         targetname: RowDef {
             name: FIELDNAME_TARGETNAME,
             func: col_targetname,
-            onlyfull: true,
+            onlyfull: false,
             align: ROWDEF_ALIGN_LEFT
         },
         preview: RowDef {
@@ -709,26 +709,58 @@ fn get_rowrenderedfield (
     if (field == FIELDNAME_ACLS) {
         return Ok(&rowrendered.acls);
     }
-    else if (field == FIELDNAME_OWNER) {
+    if (field == FIELDNAME_OWNER) {
         return Ok(&rowrendered.owner);
     }
-    else if (field == FIELDNAME_FILETYPE) {
+    if (field == FIELDNAME_FILETYPE) {
         return Ok(&rowrendered.filetype);
     }
-    else if (field == FIELDNAME_SIZE) {
+    if (field == FIELDNAME_SIZE) {
         return Ok(&rowrendered.size);
     }
-    else if (field == FIELDNAME_TIMEISO) {
+    if (field == FIELDNAME_TIMEISO) {
         return Ok(&rowrendered.timeiso);
     }
-    else if (field == FIELDNAME_SRCNAME) {
+    if (field == FIELDNAME_SRCNAME) {
         return Ok(&rowrendered.srcname);
     }
-    else if (field == FIELDNAME_TARGETNAME) {
+    if (field == FIELDNAME_TARGETNAME) {
         return Ok(&rowrendered.targetname);
     }
-    else if (field == FIELDNAME_PREVIEW) {
-        let Ok(&rowrendered.preview);
+    if (field == FIELDNAME_PREVIEW) {
+        return Ok(&rowrendered.preview);
+    }
+    return Err(Error::new(ErrorKind::Other, "Bad field"));
+}
+
+
+fn get_colpadding_field (
+    field: u8,
+    colpaddings: &RowPadding
+) -> Result<&String, Error> {
+    if (field == FIELDNAME_ACLS) {
+        return Ok(&colpaddings.acls);
+    }
+    if (field == FIELDNAME_OWNER) {
+        return Ok(&colpaddings.owner);
+    }
+    if (field == FIELDNAME_FILETYPE) {
+        return Ok(&colpaddings.filetype);
+    }
+    if (field == FIELDNAME_SIZE) {
+        return Ok(&colpaddings.size);
+    }
+    if (field == FIELDNAME_TIMEISO) {
+        return Ok(&colpaddings.timeiso);
+    }
+    if (field == FIELDNAME_SRCNAME) {
+        return Ok(&colpaddings.srcname);
+    }
+    if (field == FIELDNAME_TARGETNAME) {
+        return Ok(&colpaddings.targetname);
+    }
+    if (field == FIELDNAME_PREVIEW) {
+        return Ok(&colpaddings.preview);
     }
     return Err(Error::new(ErrorKind::Other, "Bad field"));
 }
@@ -751,7 +783,7 @@ fn addpadding (
             "<"
         }
     }
-    padlen = colpaddings[field]
+    let padlen = get_colpadding_field(field, colpaddings);
     let padstr: String = ''.join(['{:', alignchar, str(padlen), 's}'])
     ret = padstr.format(val)
     return ret
