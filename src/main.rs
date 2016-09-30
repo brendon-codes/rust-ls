@@ -120,14 +120,14 @@ struct RowRendered {
 
 #[derive(Debug)]
 struct RowPadding {
-    acls: String,
-    owner: String,
-    filetype: String,
-    size: String,
-    timeiso: String,
-    srcname: String,
-    targetname: String,
-    preview: String
+    acls: u8,
+    owner: u8,
+    filetype: u8,
+    size: u8,
+    timeiso: u8,
+    srcname: u8,
+    targetname: u8,
+    preview: u8
 }
 
 
@@ -737,30 +737,30 @@ fn get_rowrenderedfield (
 fn get_colpadding_field (
     field: u8,
     colpaddings: &RowPadding
-) -> Result<&String, Error> {
+) -> Result<u8, Error> {
     if (field == FIELDNAME_ACLS) {
-        return Ok(&colpaddings.acls);
+        return Ok(colpaddings.acls);
     }
     if (field == FIELDNAME_OWNER) {
-        return Ok(&colpaddings.owner);
+        return Ok(colpaddings.owner);
     }
     if (field == FIELDNAME_FILETYPE) {
-        return Ok(&colpaddings.filetype);
+        return Ok(colpaddings.filetype);
     }
     if (field == FIELDNAME_SIZE) {
-        return Ok(&colpaddings.size);
+        return Ok(colpaddings.size);
     }
     if (field == FIELDNAME_TIMEISO) {
-        return Ok(&colpaddings.timeiso);
+        return Ok(colpaddings.timeiso);
     }
     if (field == FIELDNAME_SRCNAME) {
-        return Ok(&colpaddings.srcname);
+        return Ok(colpaddings.srcname);
     }
     if (field == FIELDNAME_TARGETNAME) {
-        return Ok(&colpaddings.targetname);
+        return Ok(colpaddings.targetname);
     }
     if (field == FIELDNAME_PREVIEW) {
-        return Ok(&colpaddings.preview);
+        return Ok(colpaddings.preview);
     }
     return Err(Error::new(ErrorKind::Other, "Bad field"));
 }
@@ -783,7 +783,7 @@ fn addpadding (
             "<"
         }
     }
-    let padlen = get_colpadding_field(field, colpaddings);
+    let padlen: u8 = get_colpadding_field(field, colpaddings);
     let padstr: String = ''.join(['{:', alignchar, str(padlen), 's}'])
     ret = padstr.format(val)
     return ret
