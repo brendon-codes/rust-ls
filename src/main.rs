@@ -775,7 +775,7 @@ fn addpadding (
     if val.len() == 0 {
         return Ok(" ".to_string())
     }
-    let alignchar: &'static str = {
+    let alignchar: &str = {
         if align == ROWDEF_ALIGN_RIGHT {
             ">"
         }
@@ -784,9 +784,17 @@ fn addpadding (
         }
     }
     let padlen: u8 = get_colpadding_field(field, colpaddings);
-    let padstr: String = ''.join(['{:', alignchar, str(padlen), 's}'])
-    ret = padstr.format(val)
+    let padlenstring: String = padlen.to_string();
+    let pedlenstr: &str = &padlenstring;
+    let padstr: &'static str = concat!("{", ":", &alignchar, &padlenstr, "s", "}");
+    let ret: String = format!(&fmt, &val);
     return ret
+}
+
+
+fn addcolor (text: &String, color: u8) -> Result<&String, Error> {
+    out = text.join([COLORS[color], COLORS['end']])
+    return out;
 }
 
 
@@ -795,15 +803,15 @@ fn makepretty (
     field: u8,
     colpaddings: &RowPadding,
     fdefs: &AllRowDefs
-) {
+) -> Result<&String, Error> {
     let fdef_field: &RowDef = get_field_from_fdefs(field).unwrap();
     let align: u8 = fdef_field.align;
     let col: u8 = getcoldefs(row, field).unwrap();
     let clrval: u8 = getcolorval(col).unwrap();
     let textval: &String = get_rowrenderedfield(&row.render, field).unwrap();
     let paddedval: &String = addpadding(field, textval, colpaddings, align);
-    let colorval = addcolor(paddedval, clrval);
-    return colorval;
+    let colorval: &String = addcolor(paddedval, clrval).unwrap();
+    return Ok(colorval);
 }
 
 
